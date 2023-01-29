@@ -21,11 +21,11 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "example-tyler",
+            "name": "example-point2d",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/examples/example-tyler.ts",
+            "program": "${workspaceFolder}/examples/example-point2d.ts",
             "runtimeArgs": ["-r", "ts-node/register", "-r", "tsconfig-paths/register"],
             "console": "integratedTerminal",
             "outFiles": [
