@@ -3,7 +3,7 @@
  * @param x The number used to compare the sign of
  * @returns Sign of a number (+1, -1, +0, -0).
  */
-function sign(x: number): number {
+export function sign(x: number): number {
   // eslint-disable-next-line no-self-compare
   return typeof x === "number"
     ? x
@@ -16,7 +16,7 @@ function sign(x: number): number {
     : NaN;
 }
 
-class Polynomial {
+export class Polynomial {
   public coefficients: number[];
   private _variable: string;
   private _s: number;
@@ -558,4 +558,4 @@ class Polynomial {
   }
 }
 
-export default Polynomial;
+export default {sign, Polynomial};
