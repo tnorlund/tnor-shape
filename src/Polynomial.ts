@@ -558,4 +558,4 @@ export class Polynomial {
   }
 }
 
-export default {sign, Polynomial};
+// export default {sign, Polynomial};

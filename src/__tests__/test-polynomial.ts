@@ -14,6 +14,10 @@ describe("testing sign", ()=>{
         expect(sign(0)).toEqual(0)
     })
 
+    test("The +0 value returns +0", () => {
+        expect(sign(0)).toEqual(+0)
+    })
+
     test("The -0 value returns 0", () => {
         expect(sign(-0)).toEqual(-0)
     })

@@ -1,4 +1,6 @@
-export {default as Point2D} from "./src/Point2D"
+import {Polynomial} from "./src/Polynomial"
+import {Point2D} from "./src/Point2D"
 
-// const { Point2D } = require(`./src`);
-export {default as Polynomial} from "./src/Polynomial"
+// export {default as Point2D} from "./src/Point2D"
+// export default {Polynomial}
+export { Polynomial, Point2D }
