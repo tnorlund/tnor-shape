@@ -7,6 +7,20 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "example-polynomial",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/examples/example-polynomial.ts",
+            "runtimeArgs": ["-r", "ts-node/register", "-r", "tsconfig-paths/register"],
+            "console": "integratedTerminal",
+            "outFiles": [
+                "${workspaceFolder}/**/*.js"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "example-tyler",
             "skipFiles": [
                 "<node_internals>/**"
