@@ -28,10 +28,10 @@ class Point2D {
   }
 
   /**
-   * 
+   *
    * @returns {string} The string representation of the point
    */
-  public toString():string {
+  public toString(): string {
     return `point(${this.x},${this.y})`;
   }
 }

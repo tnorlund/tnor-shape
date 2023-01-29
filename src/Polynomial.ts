@@ -35,11 +35,11 @@ class Polynomial {
     this._s = 0;
   }
 
-  divideEqualsScalar(scalar:number) {
+  divideEqualsScalar(scalar: number) {
     for (let i = 0; i < this.coefficients.length; i++) {
-        this.coefficients[i] /= scalar;
+      this.coefficients[i] /= scalar;
     }
-}
+  }
 
   eval(x: number) {
     if (isNaN(x)) {
@@ -95,213 +95,240 @@ class Polynomial {
 
     return res;
   }
-  getDerivative():Polynomial {
+  getDerivative(): Polynomial {
     const derivative = new Polynomial();
 
     for (let i = 1; i < this.coefficients.length; i++) {
-        derivative.coefficients.push(i * this.coefficients[i]);
+      derivative.coefficients.push(i * this.coefficients[i]);
     }
 
     return derivative;
-}
+  }
 
   getQuarticRoots() {
     let results: number[] = [];
     const n = this.getDegree();
 
     if (n === 4) {
-        const poly = new Polynomial();
+      const poly = new Polynomial();
 
-        poly.coefficients = this.coefficients.slice();
-        poly.divideEqualsScalar(poly.coefficients[n]);
+      poly.coefficients = this.coefficients.slice();
+      poly.divideEqualsScalar(poly.coefficients[n]);
 
-        const TOLERANCE = 1e-15;
+      const TOLERANCE = 1e-15;
 
-        if (Math.abs(poly.coefficients[0]) < 10 * TOLERANCE * Math.abs(poly.coefficients[3])) {
-            poly.coefficients[0] = 0;
+      if (
+        Math.abs(poly.coefficients[0]) <
+        10 * TOLERANCE * Math.abs(poly.coefficients[3])
+      ) {
+        poly.coefficients[0] = 0;
+      }
+
+      const poly_d = poly.getDerivative();
+      const derrt = poly_d.getRoots().sort((a, b) => a - b);
+      const dery = [];
+      const nr = derrt.length - 1;
+      const rb = this.bounds();
+
+      const maxabsX = Math.max(Math.abs(rb.minX), Math.abs(rb.maxX));
+      const ZEROepsilon = this.zeroErrorEstimate(maxabsX);
+
+      for (let i = 0; i <= nr; i++) {
+        dery.push(poly.eval(derrt[i]));
+      }
+
+      for (let i = 0; i <= nr; i++) {
+        if (Math.abs(dery[i]) < ZEROepsilon) {
+          dery[i] = 0;
+        }
+      }
+
+      let i = 0;
+      const dx = Math.max((0.1 * (rb.maxX - rb.minX)) / n, TOLERANCE);
+      const guesses = [];
+      const minmax = [];
+
+      if (nr > -1) {
+        if (dery[0] !== 0) {
+          if (sign(dery[0]) !== sign(poly.eval(derrt[0] - dx) - dery[0])) {
+            guesses.push(derrt[0] - dx);
+            minmax.push([rb.minX, derrt[0]]);
+          }
+        } else {
+          results.push(derrt[0], derrt[0]);
+          i++;
         }
 
-        const poly_d = poly.getDerivative();
-        const derrt = poly_d.getRoots().sort((a, b) => a - b);
-        const dery = [];
-        const nr = derrt.length - 1;
-        const rb = this.bounds();
-
-        const maxabsX = Math.max(Math.abs(rb.minX), Math.abs(rb.maxX));
-        const ZEROepsilon = this.zeroErrorEstimate(maxabsX);
-
-        for (let i = 0; i <= nr; i++) {
-            dery.push(poly.eval(derrt[i]));
+        for (; i < nr; i++) {
+          if (dery[i + 1] === 0) {
+            results.push(derrt[i + 1], derrt[i + 1]);
+            i++;
+          } else if (sign(dery[i]) !== sign(dery[i + 1])) {
+            guesses.push((derrt[i] + derrt[i + 1]) / 2);
+            minmax.push([derrt[i], derrt[i + 1]]);
+          }
         }
-
-        for (let i = 0; i <= nr; i++) {
-            if (Math.abs(dery[i]) < ZEROepsilon) {
-                dery[i] = 0;
-            }
+        if (
+          dery[nr] !== 0 &&
+          sign(dery[nr]) !== sign(poly.eval(derrt[nr] + dx) - dery[nr])
+        ) {
+          guesses.push(derrt[nr] + dx);
+          minmax.push([derrt[nr], rb.maxX]);
         }
+      }
 
-        let i = 0;
-        const dx = Math.max(0.1 * (rb.maxX - rb.minX) / n, TOLERANCE);
-        const guesses = [];
-        const minmax = [];
+      /**
+       *  @param {number} x
+       *  @returns {number}
+       */
+      const f = function (x: number) {
+        return poly.eval(x);
+      };
 
-        if (nr > -1) {
-            if (dery[0] !== 0) {
-                if (sign(dery[0]) !== sign(poly.eval(derrt[0] - dx) - dery[0])) {
-                    guesses.push(derrt[0] - dx);
-                    minmax.push([rb.minX, derrt[0]]);
-                }
-            }
-            else {
-                results.push(derrt[0], derrt[0]);
-                i++;
-            }
+      /**
+       *  @param {number} x
+       *  @returns {number}
+       */
+      const df = function (x: number) {
+        return poly_d.eval(x);
+      };
 
-            for (; i < nr; i++) {
-                if (dery[i + 1] === 0) {
-                    results.push(derrt[i + 1], derrt[i + 1]);
-                    i++;
-                }
-                else if (sign(dery[i]) !== sign(dery[i + 1])) {
-                    guesses.push((derrt[i] + derrt[i + 1]) / 2);
-                    minmax.push([derrt[i], derrt[i + 1]]);
-                }
-            }
-            if (dery[nr] !== 0 && sign(dery[nr]) !== sign(poly.eval(derrt[nr] + dx) - dery[nr])) {
-                guesses.push(derrt[nr] + dx);
-                minmax.push([derrt[nr], rb.maxX]);
-            }
+      if (guesses.length > 0) {
+        for (i = 0; i < guesses.length; i++) {
+          guesses[i] = Polynomial.newtonSecantBisection(
+            guesses[i],
+            f,
+            df,
+            32,
+            minmax[i][0],
+            minmax[i][1]
+          );
         }
+      }
 
-        /**
-         *  @param {number} x
-         *  @returns {number}
-         */
-        const f = function(x:number) {
-            return poly.eval(x);
-        };
-
-        /**
-         *  @param {number} x
-         *  @returns {number}
-         */
-        const df = function(x:number) {
-            return poly_d.eval(x);
-        };
-
-        if (guesses.length > 0) {
-            for (i = 0; i < guesses.length; i++) {
-                guesses[i] = Polynomial.newtonSecantBisection(guesses[i], f, df, 32, minmax[i][0], minmax[i][1]);
-            }
-        }
-
-        results = results.concat(guesses);
+      results = results.concat(guesses);
     }
 
     return results;
-}
+  }
 
-static newtonSecantBisection(x0:number, f:Function, df:Function, max_iterations:number, min:number, max:number) {
-    let x: number, prev_dfx = 0, dfx, prev_x_ef_correction = 0, x_correction: number, x_new;
+  static newtonSecantBisection(
+    x0: number,
+    f: Function,
+    df: Function,
+    max_iterations: number,
+    min: number,
+    max: number
+  ) {
+    let x: number,
+      prev_dfx = 0,
+      dfx,
+      prev_x_ef_correction = 0,
+      x_correction: number,
+      x_new;
     let y, y_atmin, y_atmax;
 
     x = x0;
 
     const ACCURACY = 14;
     const min_correction_factor = Math.pow(10, -ACCURACY);
-    const isBounded = (typeof min === "number" && typeof max === "number");
+    const isBounded = typeof min === "number" && typeof max === "number";
 
     if (isBounded) {
-        if (min > max) {
-            throw new RangeError("Min must be greater than max");
-        }
+      if (min > max) {
+        throw new RangeError("Min must be greater than max");
+      }
 
-        y_atmin = f(min);
-        y_atmax = f(max);
+      y_atmin = f(min);
+      y_atmax = f(max);
 
-        if (sign(y_atmin) === sign(y_atmax)) {
-            throw new RangeError("Y values of bounds must be of opposite sign");
-        }
+      if (sign(y_atmin) === sign(y_atmax)) {
+        throw new RangeError("Y values of bounds must be of opposite sign");
+      }
     }
 
-    const isEnoughCorrection = function() {
-        // stop if correction is too small or if correction is in simple loop
-        return (Math.abs(x_correction) <= min_correction_factor * Math.abs(x)) ||
-            (prev_x_ef_correction === (x - x_correction) - x);
+    const isEnoughCorrection = function () {
+      // stop if correction is too small or if correction is in simple loop
+      return (
+        Math.abs(x_correction) <= min_correction_factor * Math.abs(x) ||
+        prev_x_ef_correction === x - x_correction - x
+      );
     };
 
     for (let i = 0; i < max_iterations; i++) {
-        dfx = df(x);
+      dfx = df(x);
 
-        if (dfx === 0) {
-            if (prev_dfx === 0) {
-                // error
-                throw new RangeError("df(x) is zero");
-            }
-            else {
-                // use previous derivation value
-                dfx = prev_dfx;
-            }
-            // or move x a little?
-            // dfx = df(x != 0 ? x + x * 1e-15 : 1e-15);
+      if (dfx === 0) {
+        if (prev_dfx === 0) {
+          // error
+          throw new RangeError("df(x) is zero");
+        } else {
+          // use previous derivation value
+          dfx = prev_dfx;
+        }
+        // or move x a little?
+        // dfx = df(x != 0 ? x + x * 1e-15 : 1e-15);
+      }
+
+      prev_dfx = dfx;
+      y = f(x);
+      x_correction = y / dfx;
+      x_new = x - x_correction;
+
+      if (isEnoughCorrection()) {
+        break;
+      }
+
+      if (isBounded) {
+        if (sign(y) === sign(y_atmax)) {
+          max = x;
+          y_atmax = y;
+        } else if (sign(y) === sign(y_atmin)) {
+          min = x;
+          y_atmin = y;
+        } else {
+          x = x_new;
+          break;
         }
 
-        prev_dfx = dfx;
-        y = f(x);
-        x_correction = y / dfx;
-        x_new = x - x_correction;
-
-        if (isEnoughCorrection()) {
+        if (x_new < min || x_new > max) {
+          if (sign(y_atmin) === sign(y_atmax)) {
             break;
+          }
+
+          const RATIO_LIMIT = 50;
+          const AIMED_BISECT_OFFSET = 0.25; // [0, 0.5)
+          const dy = y_atmax - y_atmin;
+          const dx = max - min;
+
+          if (dy === 0) {
+            x_correction = x - (min + dx * 0.5);
+          } else if (Math.abs(dy / Math.min(y_atmin, y_atmax)) > RATIO_LIMIT) {
+            x_correction =
+              x -
+              (min +
+                dx *
+                  (0.5 +
+                    (Math.abs(y_atmin) < Math.abs(y_atmax)
+                      ? -AIMED_BISECT_OFFSET
+                      : AIMED_BISECT_OFFSET)));
+          } else {
+            x_correction = x - (min - (y_atmin / dy) * dx);
+          }
+          x_new = x - x_correction;
+
+          if (isEnoughCorrection()) {
+            break;
+          }
         }
+      }
 
-        if (isBounded) {
-            if (sign(y) === sign(y_atmax)) {
-                max = x;
-                y_atmax = y;
-            }
-            else if (sign(y) === sign(y_atmin)) {
-                min = x;
-                y_atmin = y;
-            }
-            else {
-                x = x_new;
-                break;
-            }
-
-            if ((x_new < min) || (x_new > max)) {
-                if (sign(y_atmin) === sign(y_atmax)) {
-                    break;
-                }
-
-                const RATIO_LIMIT = 50;
-                const AIMED_BISECT_OFFSET = 0.25; // [0, 0.5)
-                const dy = y_atmax - y_atmin;
-                const dx = max - min;
-
-                if (dy === 0) {
-                    x_correction = x - (min + dx * 0.5);
-                }
-                else if (Math.abs(dy / Math.min(y_atmin, y_atmax)) > RATIO_LIMIT) {
-                    x_correction = x - (min + dx * (0.5 + (Math.abs(y_atmin) < Math.abs(y_atmax) ? -AIMED_BISECT_OFFSET : AIMED_BISECT_OFFSET)));
-                }
-                else {
-                    x_correction = x - (min - y_atmin / dy * dx);
-                }
-                x_new = x - x_correction;
-
-                if (isEnoughCorrection()) {
-                    break;
-                }
-            }
-        }
-
-        prev_x_ef_correction = x - x_new;
-        x = x_new;
+      prev_x_ef_correction = x - x_new;
+      x = x_new;
     }
 
     return x;
-}
+  }
 
   /**
    * Calculates upper Real roots bounds.
@@ -372,14 +399,13 @@ static newtonSecantBisection(x0:number, f:Function, df:Function, max_iterations:
 
   simplifyEquals(TOLERANCE = 1e-12) {
     for (let i = this.getDegree(); i >= 0; i--) {
-        if (Math.abs(this.coefficients[i]) <= TOLERANCE) {
-            this.coefficients.pop();
-        }
-        else {
-            break;
-        }
+      if (Math.abs(this.coefficients[i]) <= TOLERANCE) {
+        this.coefficients.pop();
+      } else {
+        break;
+      }
     }
-}
+  }
 
   getRoots(): number[] {
     let result: number[] = [];
@@ -400,7 +426,9 @@ static newtonSecantBisection(x0:number, f:Function, df:Function, max_iterations:
       case 3:
         result = this.getCubicRoots();
         break;
-      case 4: result = this.getQuarticRoots(); break;
+      case 4:
+        result = this.getQuarticRoots();
+        break;
       default:
         result = [];
     }
@@ -530,5 +558,4 @@ static newtonSecantBisection(x0:number, f:Function, df:Function, max_iterations:
   }
 }
 
-
-export default Polynomial
+export default Polynomial;
