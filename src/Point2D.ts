@@ -1,4 +1,4 @@
-class Point2D {
+export default class Point2D {
   x: number;
   y: number;
   public constructor(x: number = 0, y: number = 0) {
@@ -36,4 +36,5 @@ class Point2D {
   }
 }
 
-export default Point2D;
+// module.exports = { Point2D }
+// export const Point2D: any;
