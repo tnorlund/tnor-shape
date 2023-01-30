@@ -143,6 +143,7 @@ export class Polynomial {
 
     return res;
   }
+
   getDerivative(): Polynomial {
     const derivative = new Polynomial();
 
@@ -442,6 +443,10 @@ export class Polynomial {
     };
   }
 
+  /**
+   * Calculates the linear root, the x value when y is 0.
+   * @returns
+   */
   getLinearRoot(): number[] {
     const result = [];
     const a = this.coefficients[1];
@@ -493,7 +498,7 @@ export class Polynomial {
   }
 
   getQuadraticRoots(): number[] {
-    const results = [];
+    const results: number[] = [];
 
     if (this.getDegree() === 2) {
       const a = this.coefficients[2];
@@ -502,7 +507,7 @@ export class Polynomial {
       const d = b * b - 4 * c;
 
       if (d > 0) {
-        const e = Math.sqrt(d);
+        const e: number = Math.sqrt(d);
 
         results.push(0.5 * (-b + e));
         results.push(0.5 * (-b - e));
@@ -586,6 +591,11 @@ export class Polynomial {
     return results;
   }
 
+  /**
+   * Estimate what is the maximum polynomial evaluation error value under which polynomial evaluation could be in fact 0.
+   * @param maxAbsX
+   * @returns
+   */
   zeroErrorEstimate(maxAbsX: any) {
     const poly = this;
     const TOLERANCE = 1e-15;
