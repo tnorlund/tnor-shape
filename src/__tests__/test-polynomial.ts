@@ -45,7 +45,7 @@ describe("testing Polynomial", () => {
     expect(polynomial.coefficients).toStrictEqual([0, 1, 2]);
   });
 
-  test("Polynomial can be evaluated", () => {
+  test("Polynomial can be evaluated at a given t value", () => {
     const polynomial_a = new Polynomial(3, 2, 1);
     const polynomial_b = new Polynomial(4, 2, 1);
     expect(polynomial_a.eval(1)).toBe(6);
