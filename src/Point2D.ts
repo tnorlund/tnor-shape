@@ -28,11 +28,27 @@ export class Point2D {
 
   /**
    * Multiplies this 2-dimensional point by a scalar
-   * 
+   *
    * @param {number} scalar
    */
   public multiply(scalar: number): Point2D {
     return new Point2D(this.x * scalar, this.y * scalar);
+  }
+
+  /**
+   * Linearly interpolate between this point and that point by t where t = (0, 1)
+   *
+   * @param that
+   * @param t
+   * @returns
+   */
+  public lerp(that: Point2D, t: number) {
+    if (t < 0 || t > 1) {
+      throw new RangeError("t must be between 0 and 1");
+    }
+    const omt = 1.0 - t;
+
+    return new Point2D(this.x * omt + that.x * t, this.y * omt + that.y * t);
   }
 
   /**
