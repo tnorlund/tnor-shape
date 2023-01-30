@@ -261,6 +261,44 @@ export class Polynomial {
     return results;
   }
 
+  bisection(min: number, max: number, TOLERANCE = 1e-6, ACCURACY = 15) {
+    let minValue = this.eval(min);
+    let maxValue = this.eval(max);
+    let result;
+
+    if (Math.abs(minValue) <= TOLERANCE) {
+        result = min;
+    }
+    else if (Math.abs(maxValue) <= TOLERANCE) {
+        result = max;
+    }
+    else if (minValue * maxValue <= 0) {
+        const tmp1 = Math.log(max - min);
+        const tmp2 = Math.LN10 * ACCURACY;
+        const maxIterations = Math.ceil((tmp1 + tmp2) / Math.LN2);
+
+        for (let i = 0; i < maxIterations; i++) {
+            result = 0.5 * (min + max);
+            const value = this.eval(result);
+
+            if (Math.abs(value) <= TOLERANCE) {
+                break;
+            }
+
+            if (value * minValue < 0) {
+                max = result;
+                maxValue = value;
+            }
+            else {
+                min = result;
+                minValue = value;
+            }
+        }
+    }
+
+    return result;
+}
+
   /**
    *  Newton's (Newton-Raphson) method for finding Real roots on univariate function. <br/>
    *  When using bounds, algorithm falls back to secant if newton goes out of range.
@@ -497,6 +535,50 @@ export class Polynomial {
     return result;
   }
 
+  getRootsInInterval(min: number, max: number) {
+    const roots: number[] = [];
+
+    /**
+     *  @param {number} value
+     */
+    function push(value: number | undefined) {
+        if (typeof value === "number") {
+            roots.push(value);
+        }
+    }
+
+    if (this.getDegree() === 0) {
+        throw new RangeError("Unexpected empty polynomial");
+    }
+    else if (this.getDegree() === 1) {
+        push(this.bisection(min, max));
+    }
+    else {
+        // get roots of derivative
+        const deriv = this.getDerivative();
+        const droots = deriv.getRootsInInterval(min, max);
+
+        if (droots.length > 0) {
+            // find root on [min, droots[0]]
+            push(this.bisection(min, droots[0]));
+
+            // find root on [droots[i],droots[i+1]] for 0 <= i <= count-2
+            for (let i = 0; i <= droots.length - 2; i++) {
+                push(this.bisection(droots[i], droots[i + 1]));
+            }
+
+            // find root on [droots[count-1],xmax]
+            push(this.bisection(droots[droots.length - 1], max));
+        }
+        else {
+            // polynomial is monotone on [min,max], has at most one root
+            push(this.bisection(min, max));
+        }
+    }
+
+    return roots;
+}
+
   getQuadraticRoots(): number[] {
     const results: number[] = [];
 
@@ -591,13 +673,23 @@ export class Polynomial {
     return results;
   }
 
+  clone(): Polynomial {
+    const poly = new Polynomial();
+
+    poly.coefficients = this.coefficients.slice();
+
+    return poly;
+}
+
   /**
    * Estimate what is the maximum polynomial evaluation error value under which polynomial evaluation could be in fact 0.
    * @param maxAbsX
    * @returns
    */
   zeroErrorEstimate(maxAbsX: any) {
-    const poly = this;
+    // const poly = this;
+    // const poly = new Polynomial(this.coefficients...)
+    const poly = this.clone()
     const TOLERANCE = 1e-15;
 
     if (typeof maxAbsX === "undefined") {
