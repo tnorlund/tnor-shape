@@ -35,6 +35,54 @@ export class Polynomial {
     this._s = 0;
   }
 
+  /**
+   *
+   * @returns {string} A string representation of the polynomial
+   */
+  toString(): string {
+    const coefficients: string[] = [];
+    const signs: string[] = [];
+
+    for (let i = this.coefficients.length - 1; i >= 0; i--) {
+      let value: number = Math.round(this.coefficients[i] * 1000) / 1000;
+      let value_representation: string = "";
+
+      // Add the string representation when the coefficient is not 0
+      if (value !== 0) {
+        const signString = value < 0 ? " - " : " + ";
+        value = Math.abs(value);
+        value_representation = Math.abs(value).toString();
+        // How to represent the coefficient
+        if (i > 0) {
+          value_representation =
+            value === 1 ? this._variable : value.toString() + this._variable;
+        }
+
+        // Add the degree to the variable
+        if (i > 1) {
+          value_representation += "^" + i.toString();
+        }
+
+        signs.push(signString);
+        coefficients.push(value_representation);
+      }
+    }
+
+    signs[0] = signs[0] === " + " ? "" : "-";
+
+    let result = "";
+
+    for (let i = 0; i < coefficients.length; i++) {
+      result += signs[i] + coefficients[i];
+    }
+
+    return result;
+  }
+
+  /**
+   * Divides each coefficient by a scalar
+   * @param scalar
+   */
   divideEqualsScalar(scalar: number) {
     for (let i = 0; i < this.coefficients.length; i++) {
       this.coefficients[i] /= scalar;
@@ -212,6 +260,14 @@ export class Polynomial {
     return results;
   }
 
+  /**
+   *  Newton's (Newton-Raphson) method for finding Real roots on univariate function. <br/>
+   *  When using bounds, algorithm falls back to secant if newton goes out of range.
+   *  Bisection is fallback for secant when determined secant is not efficient enough.
+   *  @see {@link http://en.wikipedia.org/wiki/Newton%27s_method}
+   *  @see {@link http://en.wikipedia.org/wiki/Secant_method}
+   *  @see {@link http://en.wikipedia.org/wiki/Bisection_method}
+   */
   static newtonSecantBisection(
     x0: number,
     f: Function,
