@@ -6,6 +6,30 @@ interface Intersection {
   t: number;
 }
 
+class BoundingBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  constructor(x: number, y:number, width:number, height:number) {
+      this.x = x;
+      this.y = y;
+      this.width = width;
+      this.height = height;
+  }
+
+  overlaps(that: BoundingBox): boolean {
+      return (
+          this.x < (that.x + that.width) && (this.x + this.width) > that.x &&
+          this.y < (that.y + that.height) && (this.y + this.height) > that.y
+      );
+  }
+
+  isEmpty(): boolean {
+      return this.width !== 0 && this.height !== 0;
+  }
+}
+
 export class CubicBezier {
   b0: Point2D;
   b1: Point2D;
@@ -282,6 +306,15 @@ export class CubicBezier {
     }
     return result;
   }
+
+  public toString(): string {
+    return (
+        "M" + this.b0.x + "," + this.b0.y + " " +
+        "C" + this.b1.x + "," + this.b1.y +
+        " " + this.b2.x + "," + this.b2.y +
+        " " + this.b3.x + "," + this.b3.y
+    );
+}
 }
 
 export class QuadraticBezier {
