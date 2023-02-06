@@ -2,8 +2,8 @@ import { Point2D } from "./Point2D";
 import { Polynomial } from "./Polynomial";
 
 interface Intersection {
-    point: Point2D,
-    t: number
+  point: Point2D;
+  t: number;
 }
 
 export class CubicBezier {
@@ -20,7 +20,7 @@ export class CubicBezier {
 
   public intersectCubicBezier(that: CubicBezier): Intersection[] {
     let a, b, c, d;
-    const result = [];
+    const result: Intersection[] = [];
 
     a = this.b0.multiply(-1);
     b = this.b1.multiply(3);
@@ -241,7 +241,7 @@ export class CubicBezier {
       );
       x.simplifyEquals();
       const x_roots = x.getRoots();
-      console.log(`x_roots ${x_roots}`)
+      console.log(`x_roots ${x_roots}`);
 
       const y = new Polynomial(
         c13.y,
@@ -255,8 +255,7 @@ export class CubicBezier {
       );
       y.simplifyEquals();
       const y_roots = y.getRoots();
-      console.log(`y_roots ${y_roots}`)
-      
+      console.log(`y_roots ${y_roots}`);
 
       if (x_roots.length > 0 && y_roots.length > 0) {
         const TOLERANCE = 1e-4;
@@ -281,6 +280,99 @@ export class CubicBezier {
         }
       }
     }
+    return result;
+  }
+}
+
+export class QuadraticBezier {
+  b0: Point2D;
+  b1: Point2D;
+  b2: Point2D;
+  public constructor(b0: Point2D, b1: Point2D, b2: Point2D) {
+    this.b0 = b0;
+    this.b1 = b1;
+    this.b2 = b2;
+  }
+
+  public intersectQuadraticBezier(that: QuadraticBezier): Intersection[] {
+    const result: Intersection[] = [];
+    let a, b;
+
+    a = this.b1.multiply(-2);
+    const c12 = this.b0.add(a.add(this.b2));
+
+    a = this.b0.multiply(-2);
+    b = this.b1.multiply(2);
+    const c11 = a.add(b);
+
+    const c10 = new Point2D(this.b0.x, this.b0.y);
+
+    a = that.b1.multiply(-2);
+    const c22 = that.b0.add(a.add(that.b2));
+
+    a = that.b0.multiply(-2);
+    b = that.b1.multiply(2);
+    const c21 = a.add(b);
+
+    const c20 = new Point2D(that.b0.x, that.b0.y);
+
+    // bezout
+    a = c12.x * c11.y - c11.x * c12.y;
+    b = c22.x * c11.y - c11.x * c22.y;
+    const c = c21.x * c11.y - c11.x * c21.y;
+    const d = c11.x * (c10.y - c20.y) + c11.y * (-c10.x + c20.x);
+    const e = c22.x * c12.y - c12.x * c22.y;
+    const f = c21.x * c12.y - c12.x * c21.y;
+    const g = c12.x * (c10.y - c20.y) + c12.y * (-c10.x + c20.x);
+
+    // determinant
+    const polynomial = new Polynomial(
+      -e * e,
+      -2 * e * f,
+      a * b - f * f - 2 * e * g,
+      a * c - 2 * f * g,
+      a * d - g * g
+    );
+
+    const roots = polynomial.getRoots();
+
+    for (const s of roots) {
+      if (0 <= s && s <= 1) {
+        const xp = new Polynomial(
+          c12.x,
+          c11.x,
+          c10.x - c20.x - s * c21.x - s * s * c22.x
+        );
+        xp.simplifyEquals();
+        const xRoots = xp.getRoots();
+        const yp = new Polynomial(
+          c12.y,
+          c11.y,
+          c10.y - c20.y - s * c21.y - s * s * c22.y
+        );
+        yp.simplifyEquals();
+        const yRoots = yp.getRoots();
+
+        if (xRoots.length > 0 && yRoots.length > 0) {
+          const TOLERANCE = 1e-4;
+
+          checkRoots: for (const xRoot of xRoots) {
+            if (0 <= xRoot && xRoot <= 1) {
+              for (let k = 0; k < yRoots.length; k++) {
+                if (Math.abs(xRoot - yRoots[k]) < TOLERANCE) {
+                  result.push({
+                    point: c22.multiply(s * s).add(c21.multiply(s).add(c20)),
+                    t: xRoot
+                  });
+                  break checkRoots;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
     return result;
   }
 }
