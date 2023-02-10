@@ -45,6 +45,7 @@ export class CubicBezier {
   }
 
   public intersectCubicBezier(that: CubicBezier): Intersection[] {
+    if (!this.getBoundingBox().overlaps(that.getBoundingBox())) return [];
     let a, b, c, d;
     const result: Intersection[] = [];
 
@@ -345,7 +346,7 @@ export class CubicBezier {
     };
   }
 
-  public getBoundingBox() {
+  public getBoundingBox(): BoundingBox {
     const bernstein_polynomials = this.getBernsteinPolynomials();
     const dx = bernstein_polynomials.x.getDerivative();
     const dy = bernstein_polynomials.y.getDerivative();
@@ -370,12 +371,7 @@ export class CubicBezier {
       }
     });
 
-    return new BoundingBox(
-      min.x,
-      min.y,
-      max.x - min.x,
-      max.y - min.y
-  );
+    return new BoundingBox(min.x, min.y, max.x - min.x, max.y - min.y);
   }
 
   public toString(): string {
@@ -412,6 +408,7 @@ export class QuadraticBezier {
   }
 
   public intersectQuadraticBezier(that: QuadraticBezier): Intersection[] {
+    if (!this.getBoundingBox().overlaps(that.getBoundingBox())) return [];
     const result: Intersection[] = [];
     let a, b;
 
@@ -491,5 +488,45 @@ export class QuadraticBezier {
     }
 
     return result;
+  }
+
+  public getBernsteinPolynomials(): { x: Polynomial; y: Polynomial } {
+    let a; // temporary variables
+
+    a = this.b1.multiply(-2);
+    const c2 = this.b0.add(a.add(this.b2));
+
+    a = this.b0.multiply(-2);
+    const b = this.b1.multiply(2);
+    const c1 = a.add(b);
+
+    const c0 = this.b0;
+
+    return {
+      x: new Polynomial(c2.x, c1.x, c0.x),
+      y: new Polynomial(c2.y, c1.y, c0.y),
+    };
+  }
+
+  public getBoundingBox(): BoundingBox {
+    const polys = this.getBernsteinPolynomials();
+    const dx = polys.x.getDerivative();
+    const dy = polys.y.getDerivative();
+    let roots = dx.getRootsInInterval(0, 1);
+    roots = roots.concat(dy.getRootsInInterval(0, 1));
+
+    let min = this.b0.min(this.b2);
+    let max = this.b0.max(this.b2);
+
+    roots.forEach(function (t) {
+      if (0 <= t && t <= 1) {
+        const testPoint = new Point2D(polys.x.eval(t), polys.y.eval(t));
+
+        min = min.min(testPoint);
+        max = max.max(testPoint);
+      }
+    });
+
+    return new BoundingBox(min.x, min.y, max.x - min.x, max.y - min.y);
   }
 }
