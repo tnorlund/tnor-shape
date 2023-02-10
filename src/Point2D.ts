@@ -52,6 +52,26 @@ export class Point2D {
   }
 
   /**
+   * Calculates the minimum between this point and that point
+   *
+   * @param that
+   * @returns
+   */
+  min(that: Point2D): Point2D {
+    return new Point2D(Math.min(this.x, that.x), Math.min(this.y, that.y));
+  }
+
+  /**
+   * Calculates the maximum between this point and that point
+   *
+   * @param that
+   * @returns
+   */
+  max(that: Point2D) {
+    return new Point2D(Math.max(this.x, that.x), Math.max(this.y, that.y));
+  }
+
+  /**
    *
    * @returns {string} The string representation of the point
    */

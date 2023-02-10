@@ -11,22 +11,24 @@ class BoundingBox {
   y: number;
   width: number;
   height: number;
-  constructor(x: number, y:number, width:number, height:number) {
-      this.x = x;
-      this.y = y;
-      this.width = width;
-      this.height = height;
+  constructor(x: number, y: number, width: number, height: number) {
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
   }
 
   overlaps(that: BoundingBox): boolean {
-      return (
-          this.x < (that.x + that.width) && (this.x + this.width) > that.x &&
-          this.y < (that.y + that.height) && (this.y + this.height) > that.y
-      );
+    return (
+      this.x < that.x + that.width &&
+      this.x + this.width > that.x &&
+      this.y < that.y + that.height &&
+      this.y + this.height > that.y
+    );
   }
 
   isEmpty(): boolean {
-      return this.width !== 0 && this.height !== 0;
+    return this.width !== 0 && this.height !== 0;
   }
 }
 
@@ -307,14 +309,96 @@ export class CubicBezier {
     return result;
   }
 
+  public getBernsteinPolynomials(): { x: Polynomial; y: Polynomial } {
+    let a, b, c;
+
+    // Start with Bezier using Bernstein polynomials for weighting functions:
+    //     (1-t^3)P1 + 3t(1-t)^2P2 + 3t^2(1-t)P3 + t^3P4
+    //
+    // Expand and collect terms to form linear combinations of original Bezier
+    // controls.  This ends up with a vector cubic in t:
+    //     (-P1+3P2-3P3+P4)t^3 + (3P1-6P2+3P3)t^2 + (-3P1+3P2)t + P1
+    //             /\                  /\                /\       /\
+    //             ||                  ||                ||       ||
+    //             c3                  c2                c1       c0
+
+    // Calculate the coefficients
+    a = this.b0.multiply(-1);
+    b = this.b1.multiply(3);
+    c = this.b2.multiply(-3);
+    const c3 = a.add(b.add(c.add(this.b3)));
+
+    a = this.b0.multiply(3);
+    b = this.b1.multiply(-6);
+    c = this.b2.multiply(3);
+    const c2 = a.add(b.add(c));
+
+    a = this.b0.multiply(-3);
+    b = this.b1.multiply(3);
+    const c1 = a.add(b);
+
+    const c0 = this.b0;
+
+    return {
+      x: new Polynomial(c3.x, c2.x, c1.x, c0.x),
+      y: new Polynomial(c3.y, c2.y, c1.y, c0.y),
+    };
+  }
+
+  public getBoundingBox() {
+    const bernstein_polynomials = this.getBernsteinPolynomials();
+    const dx = bernstein_polynomials.x.getDerivative();
+    const dy = bernstein_polynomials.y.getDerivative();
+    let roots = dx.getRootsInInterval(0, 1);
+
+    roots = roots.concat(dy.getRootsInInterval(0, 1));
+
+    // initialize min/max using the first and last points on the curve
+    let min = this.b0.min(this.b3);
+    let max = this.b0.max(this.b3);
+
+    // update min/max with points between p1 and p4
+    roots.forEach(function (t) {
+      if (0 <= t && t <= 1) {
+        const testPoint = new Point2D(
+          bernstein_polynomials.x.eval(t),
+          bernstein_polynomials.y.eval(t)
+        );
+
+        min = min.min(testPoint);
+        max = max.max(testPoint);
+      }
+    });
+
+    return new BoundingBox(
+      min.x,
+      min.y,
+      max.x - min.x,
+      max.y - min.y
+  );
+  }
+
   public toString(): string {
     return (
-        "M" + this.b0.x + "," + this.b0.y + " " +
-        "C" + this.b1.x + "," + this.b1.y +
-        " " + this.b2.x + "," + this.b2.y +
-        " " + this.b3.x + "," + this.b3.y
+      "M" +
+      this.b0.x +
+      "," +
+      this.b0.y +
+      " " +
+      "C" +
+      this.b1.x +
+      "," +
+      this.b1.y +
+      " " +
+      this.b2.x +
+      "," +
+      this.b2.y +
+      " " +
+      this.b3.x +
+      "," +
+      this.b3.y
     );
-}
+  }
 }
 
 export class QuadraticBezier {
@@ -395,7 +479,7 @@ export class QuadraticBezier {
                 if (Math.abs(xRoot - yRoots[k]) < TOLERANCE) {
                   result.push({
                     point: c22.multiply(s * s).add(c21.multiply(s).add(c20)),
-                    t: xRoot
+                    t: xRoot,
                   });
                   break checkRoots;
                 }
