@@ -529,4 +529,22 @@ export class QuadraticBezier {
 
     return new BoundingBox(min.x, min.y, max.x - min.x, max.y - min.y);
   }
+
+  public toString() {
+    return (
+      "M" +
+      this.b0.x +
+      "," +
+      this.b0.y +
+      " " +
+      "Q" +
+      this.b1.x +
+      "," +
+      this.b1.y +
+      " " +
+      this.b2.x +
+      "," +
+      this.b2.y
+    );
+  }
 }
