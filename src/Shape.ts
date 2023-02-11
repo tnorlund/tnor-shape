@@ -1,5 +1,6 @@
 import { Point2D } from "./Point2D";
 import { Polynomial } from "./Polynomial";
+import {parseSVG, makeAbsolute } from "svg-path-parser"
 
 interface Intersection {
   point: Point2D;
@@ -32,15 +33,57 @@ class BoundingBox {
   }
 }
 
+// function numbersToCubicBezier()
+
 export function pathToCubicBezier(path: string): CubicBezier | void {
-  const result = /^m(\d+\.\d+|\d+|-\d+\.\d+|-\d+),(\d+\.\d+|\d+|-\d+\.\d+|-\d+)c(\d+\.\d+|\d+|-\d+\.\d+|-\d+)(\d+\.\d+|\d+|-\d+\.\d+|-\d+),(\d+\.\d+|\d+|-\d+\.\d+|-\d+)(\d+\.\d+|\d+|-\d+\.\d+|-\d+),(\d+\.\d+|\d+|-\d+\.\d+|-\d+)(\d+\.\d+|\d+|-\d+\.\d+|-\d+)/.exec(path)
-  if (result !== null) {
-    const b0 = new Point2D(Number(result[1]), Number(result[2]))
-    const b1 = new Point2D(b0.x + Number(result[3]), b0.y + Number(result[4]))
-    const b2 = new Point2D(b0.x + Number(result[5]), b0.y + Number(result[6]))
-    const b3 = new Point2D(b0.x + Number(result[7]), b0.y + Number(result[8]))
-    return new CubicBezier(b0, b1, b2, b3)
-  }
+  // const result = makeAbsolute(parseSVG(path))
+  const result = parseSVG(path) 
+
+
+  console.log(result)
+
+
+  // const coma_split = path.split(`,`)
+  // if (coma_split[0].startsWith('m') && coma_split[1].includes('c')) {
+  //   const b0_x = Number(coma_split[0].replace('m', '')) 
+  //   const b0_y = Number(coma_split[1].split('c')[0])
+  //   const b0 = new Point2D(b0_x, b0_y)
+  //   console.log(b0)
+  //   const b1_x = b0.x + Number(coma_split[1].split('c')[1])
+  //   const b1_y = b0.y + Number(coma_split[2])
+  //   const b1 = new Point2D(b1_x, b1_y)
+  //   console.log(b1)
+  //   // console.log(coma_split[1].split('c')[1])
+
+  //   const float_match = /\d+\.\d+|-\d+\.\d+/.exec(coma_split[4])
+  //   const int_match = /\d+|-\d+/.exec(coma_split[4])
+  //   if (float_match) {
+  //     const b3_x = b0.x + Number(float_match[0])
+  //     const b3_y = b0.y + Number(coma_split[4].substring(float_match[0].length))
+  //     const b3 = new Point2D(b3_x, b3_y)
+  //     // console.log(b3)
+  //   }
+  //   // const result = /\d+|-d+/
+  //   // console.log(coma_split[4])
+  //   // console.log(coma_split[1].split('c')[0])
+  // }
+
+  // console.log(coma_split)
+  // const result = /^m(\d+\.\d+|\d+|-\d+\.\d+|-\d+),(\d+\.\d+|\d+|-\d+\.\d+|-\d+)c(\d+\.\d+|\d+|-\d+\.\d+|-\d+)(\d+\.\d+|\d+|-\d+\.\d+|-\d+),(\d+\.\d+|\d+|-\d+\.\d+|-\d+)(\d+\.\d+|\d+|-\d+\.\d+|-\d+),(\d+\.\d+|\d+|-\d+\.\d+|-\d+)(\d+\.\d+|\d+|-\d+\.\d+|-\d+)/.exec(path)
+  // if (result !== null) {
+  //   const b0 = new Point2D(Number(result[1]), Number(result[2]))
+  //   const b1 = new Point2D(b0.x + Number(result[3]), b0.y + Number(result[4]))
+  //   const b2 = new Point2D(b0.x + Number(result[5]), b0.y + Number(result[6]))
+  //   const b3 = new Point2D(b0.x + Number(result[7]), b0.y + Number(result[8]))
+  //   console.log(result)
+  //   if (result[0].length == path.length) {return new CubicBezier(b0, b1, b2, b3)}
+  //   console.log(`found a spline`)
+  //   const split_start = new CubicBezier(b0, b1, b2, b3)
+  //   console.log(split_start)
+  //   console.log(path.substring(result[0].length))
+  //   console.log(result[0].length == path.length)
+    
+  // }
 }
 
 export class CubicBezier {
