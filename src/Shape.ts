@@ -397,6 +397,19 @@ export class CubicBezier {
   }
 }
 
+export function pathToQuadraticBezier(path: string): QuadraticBezier | void {
+  // move to
+  // smooth curveto
+  const result = /^m(\d+\.\d+|\d+),(\d+\.\d+\d+)s(\d+\.\d+|\d+),(\d+\.\d+|\d+),(\d+\.\d+|\d+),(\d+\.\d+|\d+)/.exec(path)
+  console.log(result)
+  if (result !== null) {
+    const b0 = new Point2D(Number(result[1]), Number(result[2]))
+    const b1 = new Point2D(b0.x + Number(result[3]), b0.y + Number(result[4]))
+    const b2 = new Point2D(b0.x + Number(result[5]), b0.y + Number(result[6]))
+    return new QuadraticBezier(b0, b1, b2)
+  }
+}
+
 export class QuadraticBezier {
   b0: Point2D;
   b1: Point2D;
@@ -405,6 +418,20 @@ export class QuadraticBezier {
     this.b0 = b0;
     this.b1 = b1;
     this.b2 = b2;
+  }
+
+  splitAtParameter(t: number): QuadraticBezier[] {
+    // first round of lerps
+    const p0 = this.b0.lerp(this.b1, t);
+    const p1 = this.b1.lerp(this.b2, t);
+
+    // second round of lerps
+    const q0 = p0.lerp(p1, t);
+
+    return [
+      new QuadraticBezier(this.b0, p0, q0),
+      new QuadraticBezier(q0, p1, this.b2),
+    ];
   }
 
   public intersectQuadraticBezier(that: QuadraticBezier): Intersection[] {
