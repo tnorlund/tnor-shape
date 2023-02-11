@@ -1,7 +1,8 @@
 import { Point2D } from "../src/Point2D";
-import { CubicBezier, pathToQuadraticBezier } from "../src/Shape";
+import { CubicBezier, pathToQuadraticBezier, pathToCubicBezier } from "../src/Shape";
 
-const result = pathToQuadraticBezier('m154.33,39.78s8.14,26.32,0,41.64')
+// const result = pathToQuadraticBezier('m154.33,39.78s8.14,26.32,0,41.64')
+const result = pathToCubicBezier(`m61.15,93.59c51.63-18.25,104.51-32.94,158.05-44.43`)
 
 
 // const P = new CubicBezier(

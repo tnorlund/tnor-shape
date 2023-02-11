@@ -32,6 +32,17 @@ class BoundingBox {
   }
 }
 
+export function pathToCubicBezier(path: string): CubicBezier | void {
+  const result = /^m(\d+\.\d+|\d+|-\d+\.\d+|-\d+),(\d+\.\d+|\d+|-\d+\.\d+|-\d+)c(\d+\.\d+|\d+|-\d+\.\d+|-\d+)(\d+\.\d+|\d+|-\d+\.\d+|-\d+),(\d+\.\d+|\d+|-\d+\.\d+|-\d+)(\d+\.\d+|\d+|-\d+\.\d+|-\d+),(\d+\.\d+|\d+|-\d+\.\d+|-\d+)(\d+\.\d+|\d+|-\d+\.\d+|-\d+)/.exec(path)
+  if (result !== null) {
+    const b0 = new Point2D(Number(result[1]), Number(result[2]))
+    const b1 = new Point2D(b0.x + Number(result[3]), b0.y + Number(result[4]))
+    const b2 = new Point2D(b0.x + Number(result[5]), b0.y + Number(result[6]))
+    const b3 = new Point2D(b0.x + Number(result[7]), b0.y + Number(result[8]))
+    return new CubicBezier(b0, b1, b2, b3)
+  }
+}
+
 export class CubicBezier {
   b0: Point2D;
   b1: Point2D;
