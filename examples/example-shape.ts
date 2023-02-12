@@ -156,14 +156,35 @@ function createEdgeCurves(node_edges: NodeEdges[]): edgeCurves[] {
       );
       // remove curve from inside ellipse_A
       curve = curve.splitAtParameter(curve.intersectEllipse(ellipse_A)[0].t)[1];
+      // remove curve from inside ellipse_B
       curve = curve.splitAtParameter(curve.intersectEllipse(ellipse_B)[0].t)[0];
-      clean_curves.push(curve);
-      // var clean_curve =
-      // const intersections_A = curve.intersectEllipse(circle_A)[0];
-      // var clean_curve = curve.splitAtParameter(intersections_A.t)[1];
-      // const intersections_B = clean_curve.intersectEllipse(circle_B)[0];
-      // clean_curve = clean_curve.splitAtParameter(intersections_B.t)[0];
-      // AB_clean_curves.push(clean_curve);
+      var overlapping = false;
+      for (
+        let outer_index = index;
+        outer_index < node_edges.length;
+        outer_index++
+      ) {
+        const outer_ellipse_A = node_edges[outer_index].ellipse_A;
+        const outer_ellipse_B = node_edges[outer_index].ellipse_B;
+        // skip this iteration if A or B is found to be the same as this A or B
+        if (
+          ellipse_A.center.equals(outer_ellipse_A.center) ||
+          ellipse_A.center.equals(outer_ellipse_B.center) ||
+          ellipse_B.center.equals(outer_ellipse_A.center) ||
+          ellipse_B.center.equals(outer_ellipse_B.center)
+        ) {
+          continue;
+        }
+        if (
+          curve.getBoundingBox().overlaps(outer_ellipse_A.getBoundingBox()) ||
+          curve.getBoundingBox().overlaps(outer_ellipse_B.getBoundingBox())
+        ) {
+          overlapping = true;
+        }
+      }
+      if (!overlapping) {
+        clean_curves.push(curve);
+      }
     }
     result.push({
       mid_Point: mid_point,
@@ -176,122 +197,6 @@ function createEdgeCurves(node_edges: NodeEdges[]): edgeCurves[] {
 }
 
 const edge_curves = createEdgeCurves(node_edges);
-
-const AB = new Line(circle_A.center, circle_B.center);
-const AC = new Line(circle_A.center, circle_C.center);
-const BC = new Line(circle_B.center, circle_C.center);
-
-const AB_half_point_between = AB.start.lerp(AB.end, 0.5);
-const AB_half_point_between_perpendicular = new Vector2D(
-  AB_half_point_between.x,
-  AB_half_point_between.y
-).perp();
-const AC_half_point_between = AC.start.lerp(AC.end, 0.5);
-const AC_half_point_between_perpendicular = new Vector2D(
-  AC_half_point_between.x,
-  AC_half_point_between.y
-).perp();
-const BC_half_point_between = BC.start.lerp(AC.end, 0.5);
-const BC_half_point_between_perpendicular = new Vector2D(
-  BC_half_point_between.x,
-  BC_half_point_between.y
-).perp();
-
-const AB_top_mid_line = AB_half_point_between_perpendicular.perp()
-  .divide(mid_line_length)
-  .add(new Vector2D(AB_half_point_between.x, AB_half_point_between.y));
-const AB_bottom_mid_line = AB_half_point_between_perpendicular.perp()
-  .perp()
-  .perp()
-  .divide(mid_line_length)
-  .add(new Vector2D(AB_half_point_between.x, AB_half_point_between.y));
-const AC_top_mid_line = AC_half_point_between_perpendicular.perp()
-  .divide(mid_line_length)
-  .add(new Vector2D(AC_half_point_between.x, AC_half_point_between.y));
-const AC_bottom_mid_line = AC_half_point_between_perpendicular.perp()
-  .perp()
-  .perp()
-  .divide(mid_line_length)
-  .add(new Vector2D(AC_half_point_between.x, AC_half_point_between.y));
-const BC_top_mid_line = BC_half_point_between_perpendicular.perp()
-  .divide(mid_line_length)
-  .add(new Vector2D(BC_half_point_between.x, BC_half_point_between.y));
-const BC_bottom_mid_line = BC_half_point_between_perpendicular.perp()
-  .perp()
-  .perp()
-  .divide(mid_line_length)
-  .add(new Vector2D(BC_half_point_between.x, BC_half_point_between.y));
-
-const number_of_anchors = 20;
-const AB_anchors: Point2D[] = [];
-const AC_anchors: Point2D[] = [];
-const BC_anchors: Point2D[] = [];
-
-for (let index = 0; index < number_of_anchors; index++) {
-  const t = index / (number_of_anchors - 1);
-  AB_anchors.push(
-    new Point2D(AB_top_mid_line.x, AB_top_mid_line.y).lerp(
-      new Point2D(AB_bottom_mid_line.x, AB_bottom_mid_line.y),
-      t
-    )
-  );
-  AC_anchors.push(
-    new Point2D(AC_top_mid_line.x, AC_top_mid_line.y).lerp(
-      new Point2D(AC_bottom_mid_line.x, AC_bottom_mid_line.y),
-      t
-    )
-  );
-  BC_anchors.push(
-    new Point2D(BC_top_mid_line.x, BC_top_mid_line.y).lerp(
-      new Point2D(BC_bottom_mid_line.x, BC_bottom_mid_line.y),
-      t
-    )
-  );
-}
-
-const AB_curves: QuadraticBezier[] = [];
-const AC_curves: QuadraticBezier[] = [];
-const BC_curves: QuadraticBezier[] = [];
-for (let index = 0; index < AB_anchors.length; index++) {
-  const anchor = AB_anchors[index];
-  AB_curves.push(new QuadraticBezier(circle_A.center, anchor, circle_B.center));
-}
-for (let index = 0; index < AC_anchors.length; index++) {
-  const anchor = AC_anchors[index];
-  AC_curves.push(new QuadraticBezier(circle_A.center, anchor, circle_C.center));
-}
-for (let index = 0; index < BC_anchors.length; index++) {
-  const anchor = AC_anchors[index];
-  BC_curves.push(new QuadraticBezier(circle_B.center, anchor, circle_C.center));
-}
-
-const AB_clean_curves = [];
-const AC_clean_curves = [];
-const BC_clean_curves = [];
-for (let index = 0; index < AB_curves.length; index++) {
-  const curve = AB_curves[index];
-  const intersections_A = curve.intersectEllipse(circle_A)[0];
-  var clean_curve = curve.splitAtParameter(intersections_A.t)[1];
-  const intersections_B = clean_curve.intersectEllipse(circle_B)[0];
-  clean_curve = clean_curve.splitAtParameter(intersections_B.t)[0];
-  AB_clean_curves.push(clean_curve);
-}
-for (let index = 0; index < AC_curves.length; index++) {
-  const curve = AC_curves[index];
-  const intersections_A = curve.intersectEllipse(circle_A)[0];
-  var clean_curve = curve.splitAtParameter(intersections_A.t)[1];
-  const intersections_C = clean_curve.intersectEllipse(circle_C)[0];
-  clean_curve = clean_curve.splitAtParameter(intersections_C.t)[0];
-  AC_clean_curves.push(clean_curve);
-}
-for (let index = 0; index < BC_curves.length; index++) {
-  const curve = BC_curves[index];
-  const intersections_B = curve.intersectEllipse(circle_B)[0];
-  var clean_curve = curve.splitAtParameter(intersections_B.t)[1];
-  const intersections_C = clean_curve.intersectEllipse(circle_C)[0];
-  clean_curve = clean_curve.splitAtParameter(intersections_C.t)[0];
-  BC_clean_curves.push(clean_curve);
-}
 
 if (!DEBUG) {
   console.log(`<svg id="Layer_2" data-name="Layer 2"`);
