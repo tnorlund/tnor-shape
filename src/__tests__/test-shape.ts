@@ -99,8 +99,37 @@ describe("testing Ellipse", () => {
       {
         point: new Point2D(41.13999063670464, 59.98374205080722),
         t: null,
-      }
+      },
+    ]);
+  });
 
+  test("Ellipse can be approximated as 4 Cubic Bezier curves", () => {
+    const P = new Ellipse(new Point2D(40, 50), 20, 10);
+    expect(P.toBezier()).toEqual([
+      new CubicBezier(
+        new Point2D(20, 50),
+        new Point2D(20, 44.477152000000004),
+        new Point2D(28.954304, 40),
+        new Point2D(40, 40)
+      ),
+      new CubicBezier(
+        new Point2D(40, 40),
+        new Point2D(51.045696, 40),
+        new Point2D(60, 44.477152000000004),
+        new Point2D(60, 50)
+      ),
+      new CubicBezier(
+        new Point2D(60, 50),
+        new Point2D(60, 55.522847999999996),
+        new Point2D(51.045696, 60),
+        new Point2D(40, 60)
+      ),
+      new CubicBezier(
+        new Point2D(40, 60),
+        new Point2D(28.954304, 60),
+        new Point2D(20, 55.522847999999996),
+        new Point2D(20, 50)
+      )
     ]);
   });
 });

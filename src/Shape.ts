@@ -696,6 +696,42 @@ export class Ellipse {
 
     return result;
   }
+
+  public toBezier(): CubicBezier[] {
+    // const result: CubicBezier[] = [];
+    const kappa = 0.5522848; // 4 * ((√(2) - 1) / 3)
+    const ox = this.rx * kappa; // control point offset horizontal
+    const oy = this.ry * kappa; // control point offset vertical
+    const xe = this.center.x + this.rx; // x-end
+    const ye = this.center.y + this.ry; // y-end
+
+    return [
+      new CubicBezier(
+        new Point2D(this.center.x - this.rx, this.center.y),
+        new Point2D(this.center.x - this.rx, this.center.y - oy),
+        new Point2D(this.center.x - ox, this.center.y - this.ry),
+        new Point2D(this.center.x, this.center.y - this.ry)
+      ),
+      new CubicBezier(
+        new Point2D(this.center.x, this.center.y - this.ry),
+        new Point2D(this.center.x + ox, this.center.y - this.ry),
+        new Point2D(xe, this.center.y - oy),
+        new Point2D(xe, this.center.y)
+      ),
+      new CubicBezier(
+        new Point2D(xe, this.center.y),
+        new Point2D(xe, this.center.y + oy),
+        new Point2D(this.center.x + ox, ye),
+        new Point2D(this.center.x, ye)
+      ),
+      new CubicBezier(
+        new Point2D(this.center.x, ye),
+        new Point2D(this.center.x - ox, ye),
+        new Point2D(this.center.x - this.rx, this.center.y + oy),
+        new Point2D(this.center.x - this.rx, this.center.y)
+      ),
+    ];
+  }
 }
 
 export class Arc {
