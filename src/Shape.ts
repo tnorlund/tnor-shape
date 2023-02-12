@@ -700,6 +700,54 @@ export class Ellipse {
     return result;
   }
 
+  public intersectQuadraticBezier(that: QuadraticBezier): Intersection[] {
+    const result: Intersection[] = [];
+    if (!this.getBoundingBox().overlaps(that.getBoundingBox())) {
+      return [];
+    }
+    let a;
+    a = that.b1.multiply(-2);
+    const c2 = that.b0.add(a.add(that.b2));
+
+    a = that.b0.multiply(-2);
+    const b = that.b1.multiply(2);
+    const c1 = a.add(b);
+
+    const c0 = new Point2D(that.b0.x, that.b0.y);
+
+    const rx_squared = this.rx * this.rx;
+    const ry_squared = this.ry * this.ry;
+    const roots = new Polynomial(
+      ry_squared * c2.x * c2.x + rx_squared * c2.y * c2.y,
+      2 * (ry_squared * c2.x * c1.x + rx_squared * c2.y * c1.y),
+      ry_squared * (2 * c2.x * c0.x + c1.x * c1.x) +
+        rx_squared * (2 * c2.y * c0.y + c1.y * c1.y) -
+        2 *
+          (ry_squared * this.center.x * c2.x +
+            rx_squared * this.center.y * c2.y),
+      2 *
+        (ry_squared * c1.x * (c0.x - this.center.x) +
+          rx_squared * c1.y * (c0.y - this.center.y)),
+      ry_squared * (c0.x * c0.x + this.center.x * this.center.x) +
+        rx_squared * (c0.y * c0.y + this.center.y * this.center.y) -
+        2 *
+          (ry_squared * this.center.x * c0.x +
+            rx_squared * this.center.y * c0.y) -
+        rx_squared * ry_squared
+    ).getRoots();
+
+    for (const t of roots) {
+      if (0 <= t && t <= 1) {
+        result.push({
+          point: c2.multiply(t * t).add(c1.multiply(t).add(c0)),
+          t: null,
+        });
+      }
+    }
+
+    return result;
+  }
+
   public toBezier(): CubicBezier[] {
     // const result: CubicBezier[] = [];
     const kappa = 0.5522848; // 4 * ((√(2) - 1) / 3)
@@ -787,9 +835,7 @@ export class Arc {
   }
 }
 
-export function BeziersToPath(
-  beziers: CubicBezier[]
-): string {
+export function BeziersToPath(beziers: CubicBezier[]): string {
   if (beziers.length == 1) {
     return beziers[0].toString();
   }
@@ -818,6 +864,9 @@ export function BeziersToPath(
     const Q = beziers[index + 1];
     if (P instanceof CubicBezier) {
       if (Q instanceof CubicBezier) {
+        if (!P.b3.equals(Q.b0)) {
+          throw Error("Beziers must be connected");
+        }
         result +=
           P.toString() +
           "S " +

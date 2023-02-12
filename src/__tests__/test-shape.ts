@@ -109,6 +109,25 @@ describe("testing Ellipse", () => {
     ]);
   });
 
+  test("Ellipse and a Quadratic Bezier Curve intersections can be calculated", () => {
+    const P = new Ellipse(new Point2D(40, 50), 20, 10);
+    const Q = new QuadraticBezier(
+      new Point2D(25, 30),
+      new Point2D(20, 50),
+      new Point2D(25, 70)
+    );
+    expect(P.intersectQuadraticBezier(Q)).toEqual([
+      {
+        point: new Point2D(22.654919008431115, 45.0213414106831),
+        t: null,
+      },
+      {
+        point: new Point2D(22.65491900843112, 54.97865858931689),
+        t: null,
+      },
+    ]);
+  });
+
   test("Ellipse can be approximated as 4 Cubic Bezier curves", () => {
     const P = new Ellipse(new Point2D(40, 50), 20, 10);
     expect(P.toBezier()).toEqual([
