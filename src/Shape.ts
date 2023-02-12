@@ -6,7 +6,7 @@ interface Intersection {
   t: number | null;
 }
 
-class BoundingBox {
+export class BoundingBox {
   x: number;
   y: number;
   width: number;
