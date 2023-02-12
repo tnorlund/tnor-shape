@@ -795,6 +795,70 @@ export class Ellipse {
     return result;
   }
 
+  public intersectCubicBezier(that: CubicBezier): Intersection[] {
+    const result: Intersection[] = [];
+    if (!this.getBoundingBox().overlaps(that.getBoundingBox())) {
+      return [];
+    }
+    let a, b, c, d;
+    a = that.b0.multiply(-1);
+    b = that.b1.multiply(3);
+    c = that.b2.multiply(-3);
+    d = a.add(b.add(c.add(that.b3)));
+    const c3 = new Point2D(d.x, d.y);
+
+    a = that.b0.multiply(3);
+    b = that.b1.multiply(-6);
+    c = that.b2.multiply(3);
+    d = a.add(b.add(c));
+    const c2 = new Point2D(d.x, d.y);
+
+    a = that.b0.multiply(-3);
+    b = that.b1.multiply(3);
+    c = a.add(b);
+    const c1 = new Point2D(c.x, c.y);
+
+    const c0 = new Point2D(that.b0.x, that.b0.y);
+
+    const rx_squared = this.rx * this.rx;
+    const ry_squared = this.ry * this.ry;
+    const poly = new Polynomial(
+      c3.x * c3.x * ry_squared + c3.y * c3.y * rx_squared,
+      2 * (c3.x * c2.x * ry_squared + c3.y * c2.y * rx_squared),
+      2 * (c3.x * c1.x * ry_squared + c3.y * c1.y * rx_squared) +
+        c2.x * c2.x * ry_squared +
+        c2.y * c2.y * rx_squared,
+      2 * c3.x * ry_squared * (c0.x - this.center.x) +
+        2 * c3.y * rx_squared * (c0.y - this.center.y) +
+        2 * (c2.x * c1.x * ry_squared + c2.y * c1.y * rx_squared),
+      2 * c2.x * ry_squared * (c0.x - this.center.x) +
+        2 * c2.y * rx_squared * (c0.y - this.center.y) +
+        c1.x * c1.x * ry_squared +
+        c1.y * c1.y * rx_squared,
+      2 * c1.x * ry_squared * (c0.x - this.center.x) +
+        2 * c1.y * rx_squared * (c0.y - this.center.y),
+      c0.x * c0.x * ry_squared -
+        2 * c0.y * this.center.y * rx_squared -
+        2 * c0.x * this.center.x * ry_squared +
+        c0.y * c0.y * rx_squared +
+        this.center.x * this.center.x * ry_squared +
+        this.center.y * this.center.y * rx_squared -
+        rx_squared * ry_squared
+    );
+    const roots = poly.getRootsInInterval(0, 1);
+
+    for (const t of roots) {
+      result.push({
+        point: c3
+          .multiply(t * t * t)
+          .add(c2.multiply(t * t).add(c1.multiply(t).add(c0))),
+        t: null,
+      });
+    }
+
+    return result;
+  }
+
   public toBezier(): CubicBezier[] {
     // const result: CubicBezier[] = [];
     const kappa = 0.5522848; // 4 * ((√(2) - 1) / 3)
