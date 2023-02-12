@@ -82,6 +82,69 @@ export class CubicBezier {
     this.b3 = b3;
   }
 
+  public intersectEllipse(that: Ellipse): Intersection[] {
+    if (!this.getBoundingBox().overlaps(that.getBoundingBox())) return [];
+    const result: Intersection[] = [];
+
+    let a, b, c, d;
+    a = this.b0.multiply(-1);
+    b = this.b1.multiply(3);
+    c = this.b2.multiply(-3);
+    d = a.add(b.add(c.add(this.b3)));
+    const c3 = new Point2D(d.x, d.y);
+
+    a = this.b0.multiply(3);
+    b = this.b1.multiply(-6);
+    c = this.b2.multiply(3);
+    d = a.add(b.add(c));
+    const c2 = new Point2D(d.x, d.y);
+
+    a = this.b0.multiply(-3);
+    b = this.b1.multiply(3);
+    c = a.add(b);
+    const c1 = new Point2D(c.x, c.y);
+
+    const c0 = new Point2D(this.b0.x, this.b0.y);
+
+    const rx_squared = that.rx * that.rx;
+    const ry_squared = that.ry * that.ry;
+    const poly = new Polynomial(
+      c3.x * c3.x * ry_squared + c3.y * c3.y * rx_squared,
+      2 * (c3.x * c2.x * ry_squared + c3.y * c2.y * rx_squared),
+      2 * (c3.x * c1.x * ry_squared + c3.y * c1.y * rx_squared) +
+        c2.x * c2.x * ry_squared +
+        c2.y * c2.y * rx_squared,
+      2 * c3.x * ry_squared * (c0.x - that.center.x) +
+        2 * c3.y * rx_squared * (c0.y - that.center.y) +
+        2 * (c2.x * c1.x * ry_squared + c2.y * c1.y * rx_squared),
+      2 * c2.x * ry_squared * (c0.x - that.center.x) +
+        2 * c2.y * rx_squared * (c0.y - that.center.y) +
+        c1.x * c1.x * ry_squared +
+        c1.y * c1.y * rx_squared,
+      2 * c1.x * ry_squared * (c0.x - that.center.x) +
+        2 * c1.y * rx_squared * (c0.y - that.center.y),
+      c0.x * c0.x * ry_squared -
+        2 * c0.y * that.center.y * rx_squared -
+        2 * c0.x * that.center.x * ry_squared +
+        c0.y * c0.y * rx_squared +
+        that.center.x * that.center.x * ry_squared +
+        that.center.y * that.center.y * rx_squared -
+        rx_squared * ry_squared
+    );
+    const roots = poly.getRootsInInterval(0, 1);
+
+    for (const t of roots) {
+      result.push({
+        point: c3
+          .multiply(t * t * t)
+          .add(c2.multiply(t * t).add(c1.multiply(t).add(c0))),
+        t: null,
+      });
+    }
+
+    return result;
+  }
+
   public intersectCubicBezier(that: CubicBezier): Intersection[] {
     if (!this.getBoundingBox().overlaps(that.getBoundingBox())) return [];
     let a, b, c, d;
