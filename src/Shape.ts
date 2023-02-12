@@ -576,6 +576,53 @@ export class QuadraticBezier {
     };
   }
 
+  public intersectEllipse(that: Ellipse): Intersection[] {
+    const result: Intersection[] = [];
+    if (!this.getBoundingBox().overlaps(that.getBoundingBox())) {
+      return [];
+    }
+    let a;
+    a = this.b1.multiply(-2);
+    const c2 = this.b0.add(a.add(this.b2));
+
+    a = this.b0.multiply(-2);
+    const b = this.b1.multiply(2);
+    const c1 = a.add(b);
+
+    const c0 = new Point2D(this.b0.x, this.b0.y);
+
+    const rx_squared = that.rx * that.rx;
+    const ry_squared = that.ry * that.ry;
+    const roots = new Polynomial(
+      ry_squared * c2.x * c2.x + rx_squared * c2.y * c2.y,
+      2 * (ry_squared * c2.x * c1.x + rx_squared * c2.y * c1.y),
+      ry_squared * (2 * c2.x * c0.x + c1.x * c1.x) +
+        rx_squared * (2 * c2.y * c0.y + c1.y * c1.y) -
+        2 *
+          (ry_squared * that.center.x * c2.x +
+            rx_squared * that.center.y * c2.y),
+      2 *
+        (ry_squared * c1.x * (c0.x - that.center.x) +
+          rx_squared * c1.y * (c0.y - that.center.y)),
+      ry_squared * (c0.x * c0.x + that.center.x * that.center.x) +
+        rx_squared * (c0.y * c0.y + that.center.y * that.center.y) -
+        2 *
+          (ry_squared * that.center.x * c0.x +
+            rx_squared * that.center.y * c0.y) -
+        rx_squared * ry_squared
+    ).getRoots();
+
+    for (const t of roots) {
+      if (0 <= t && t <= 1) {
+        result.push({
+          point: c2.multiply(t * t).add(c1.multiply(t).add(c0)),
+          t: t,
+        });
+      }
+    }
+    return result;
+  }
+
   public getBoundingBox(): BoundingBox {
     const polys = this.getBernsteinPolynomials();
     const dx = polys.x.getDerivative();
