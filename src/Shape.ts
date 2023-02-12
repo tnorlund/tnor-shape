@@ -3,7 +3,7 @@ import { Polynomial } from "./Polynomial";
 
 interface Intersection {
   point: Point2D;
-  t: number;
+  t: number | null;
 }
 
 class BoundingBox {
@@ -32,14 +32,41 @@ class BoundingBox {
   }
 }
 
+function bezout(e1: number[], e2: number[]): Polynomial {
+  const AB = e1[0] * e2[1] - e2[0] * e1[1];
+  const AC = e1[0] * e2[2] - e2[0] * e1[2];
+  const AD = e1[0] * e2[3] - e2[0] * e1[3];
+  const AE = e1[0] * e2[4] - e2[0] * e1[4];
+  const AF = e1[0] * e2[5] - e2[0] * e1[5];
+  const BC = e1[1] * e2[2] - e2[1] * e1[2];
+  const BE = e1[1] * e2[4] - e2[1] * e1[4];
+  const BF = e1[1] * e2[5] - e2[1] * e1[5];
+  const CD = e1[2] * e2[3] - e2[2] * e1[3];
+  const DE = e1[3] * e2[4] - e2[3] * e1[4];
+  const DF = e1[3] * e2[5] - e2[3] * e1[5];
+  const BFpDE = BF + DE;
+  const BEmCD = BE - CD;
+
+  return new Polynomial(
+    AB * BC - AC * AC,
+    AB * BEmCD + AD * BC - 2 * AC * AE,
+    AB * BFpDE + AD * BEmCD - AE * AE - 2 * AC * AF,
+    AB * DF + AD * BFpDE - 2 * AE * AF,
+    AD * DF - AF * AF
+  );
+}
+
 export function pathToCubicBezier(path: string): CubicBezier | void {
-  const result = /^m(\d+\.\d+|\d+|-\d+\.\d+|-\d+),(\d+\.\d+|\d+|-\d+\.\d+|-\d+)c(\d+\.\d+|\d+|-\d+\.\d+|-\d+)(\d+\.\d+|\d+|-\d+\.\d+|-\d+),(\d+\.\d+|\d+|-\d+\.\d+|-\d+)(\d+\.\d+|\d+|-\d+\.\d+|-\d+),(\d+\.\d+|\d+|-\d+\.\d+|-\d+)(\d+\.\d+|\d+|-\d+\.\d+|-\d+)/.exec(path)
+  const result =
+    /^m(\d+\.\d+|\d+|-\d+\.\d+|-\d+),(\d+\.\d+|\d+|-\d+\.\d+|-\d+)c(\d+\.\d+|\d+|-\d+\.\d+|-\d+)(\d+\.\d+|\d+|-\d+\.\d+|-\d+),(\d+\.\d+|\d+|-\d+\.\d+|-\d+)(\d+\.\d+|\d+|-\d+\.\d+|-\d+),(\d+\.\d+|\d+|-\d+\.\d+|-\d+)(\d+\.\d+|\d+|-\d+\.\d+|-\d+)/.exec(
+      path
+    );
   if (result !== null) {
-    const b0 = new Point2D(Number(result[1]), Number(result[2]))
-    const b1 = new Point2D(b0.x + Number(result[3]), b0.y + Number(result[4]))
-    const b2 = new Point2D(b0.x + Number(result[5]), b0.y + Number(result[6]))
-    const b3 = new Point2D(b0.x + Number(result[7]), b0.y + Number(result[8]))
-    return new CubicBezier(b0, b1, b2, b3)
+    const b0 = new Point2D(Number(result[1]), Number(result[2]));
+    const b1 = new Point2D(b0.x + Number(result[3]), b0.y + Number(result[4]));
+    const b2 = new Point2D(b0.x + Number(result[5]), b0.y + Number(result[6]));
+    const b3 = new Point2D(b0.x + Number(result[7]), b0.y + Number(result[8]));
+    return new CubicBezier(b0, b1, b2, b3);
   }
 }
 
@@ -411,13 +438,16 @@ export class CubicBezier {
 export function pathToQuadraticBezier(path: string): QuadraticBezier | void {
   // move to
   // smooth curveto
-  const result = /^m(\d+\.\d+|\d+),(\d+\.\d+\d+)s(\d+\.\d+|\d+),(\d+\.\d+|\d+),(\d+\.\d+|\d+),(\d+\.\d+|\d+)/.exec(path)
-  console.log(result)
+  const result =
+    /^m(\d+\.\d+|\d+),(\d+\.\d+\d+)s(\d+\.\d+|\d+),(\d+\.\d+|\d+),(\d+\.\d+|\d+),(\d+\.\d+|\d+)/.exec(
+      path
+    );
+  console.log(result);
   if (result !== null) {
-    const b0 = new Point2D(Number(result[1]), Number(result[2]))
-    const b1 = new Point2D(b0.x + Number(result[3]), b0.y + Number(result[4]))
-    const b2 = new Point2D(b0.x + Number(result[5]), b0.y + Number(result[6]))
-    return new QuadraticBezier(b0, b1, b2)
+    const b0 = new Point2D(Number(result[1]), Number(result[2]));
+    const b1 = new Point2D(b0.x + Number(result[3]), b0.y + Number(result[4]));
+    const b2 = new Point2D(b0.x + Number(result[5]), b0.y + Number(result[6]));
+    return new QuadraticBezier(b0, b1, b2);
   }
 }
 
@@ -583,6 +613,137 @@ export class QuadraticBezier {
       this.b2.x +
       "," +
       this.b2.y
+    );
+  }
+}
+
+export class Ellipse {
+  center: Point2D;
+  rx: number;
+  ry: number;
+  public constructor(center: Point2D, rx: number, ry: number) {
+    this.center = center;
+    this.rx = rx;
+    this.ry = ry;
+  }
+
+  getBoundingBox(): BoundingBox {
+    return new BoundingBox(
+      this.center.x - this.rx,
+      this.center.y - this.ry,
+      this.rx * 2.0,
+      this.ry * 2.0
+    );
+  }
+
+  public intersectEllipse(that: Ellipse): Intersection[] {
+    const result: Intersection[] = [];
+
+    const a = [
+      this.ry * this.ry,
+      0,
+      this.rx * this.rx,
+      -2 * this.ry * this.ry * this.center.x,
+      -2 * this.rx * this.rx * this.center.y,
+      this.ry * this.ry * this.center.x * this.center.x +
+        this.rx * this.rx * this.center.y * this.center.y -
+        this.rx * this.rx * this.ry * this.ry,
+    ];
+    const b = [
+      that.ry * that.ry,
+      0,
+      that.rx * that.rx,
+      -2 * that.ry * that.ry * that.center.x,
+      -2 * that.rx * that.rx * that.center.y,
+      that.ry * that.ry * that.center.x * that.center.x +
+        that.rx * that.rx * that.center.y * that.center.y -
+        that.rx * that.rx * that.ry * that.ry,
+    ];
+
+    const polynomial_y = bezout(a, b);
+    const roots_y = polynomial_y.getRoots();
+    const epsilon = 1e-3;
+    const norm0 = (a[0] * a[0] + 2 * a[1] * a[1] + a[2] * a[2]) * epsilon;
+    const norm1 = (b[0] * b[0] + 2 * b[1] * b[1] + b[2] * b[2]) * epsilon;
+
+    for (let y = 0; y < roots_y.length; y++) {
+      const polynomial_x = new Polynomial(
+        a[0],
+        a[3] + roots_y[y] * a[1],
+        a[5] + roots_y[y] * (a[4] + roots_y[y] * a[2])
+      );
+      const roots_x = polynomial_x.getRoots();
+
+      for (let x = 0; x < roots_x.length; x++) {
+        let tst =
+          (a[0] * roots_x[x] + a[1] * roots_y[y] + a[3]) * roots_x[x] +
+          (a[2] * roots_y[y] + a[4]) * roots_y[y] +
+          a[5];
+        if (Math.abs(tst) < norm0) {
+          tst =
+            (b[0] * roots_x[x] + b[1] * roots_y[y] + b[3]) * roots_x[x] +
+            (b[2] * roots_y[y] + b[4]) * roots_y[y] +
+            b[5];
+          if (Math.abs(tst) < norm1) {
+            result.push({
+              point: new Point2D(roots_x[x], roots_y[y]),
+              t: null,
+            });
+          }
+        }
+      }
+    }
+
+    return result;
+  }
+}
+
+export class Arc {
+  start: Point2D;
+  rx: number;
+  ry: number;
+  x_axis_rotation: number;
+  large_arc_flag: number;
+  sweep_flag;
+  end: Point2D;
+  public constructor(
+    start: Point2D,
+    rx: number,
+    ry: number,
+    x_axis_rotation: number,
+    large_arc_flag: number,
+    sweep_flag: any,
+    end: Point2D
+  ) {
+    this.start = start;
+    this.rx = rx;
+    this.ry = ry;
+    this.x_axis_rotation = x_axis_rotation;
+    this.large_arc_flag = large_arc_flag;
+    this.sweep_flag = sweep_flag;
+    this.end = end;
+  }
+
+  public toString() {
+    return (
+      "M" +
+      this.start.x +
+      " " +
+      this.start.y +
+      "A" +
+      this.rx +
+      " " +
+      this.ry +
+      " " +
+      this.x_axis_rotation +
+      " " +
+      this.large_arc_flag +
+      " " +
+      this.sweep_flag +
+      " " +
+      this.end.x +
+      " " +
+      this.end.y
     );
   }
 }
