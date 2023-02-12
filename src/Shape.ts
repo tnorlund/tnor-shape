@@ -638,6 +638,9 @@ export class Ellipse {
 
   public intersectEllipse(that: Ellipse): Intersection[] {
     const result: Intersection[] = [];
+    if (!this.getBoundingBox().overlaps(that.getBoundingBox())) {
+      return result;
+    }
 
     const a = [
       this.ry * this.ry,
@@ -782,4 +785,51 @@ export class Arc {
       this.end.y
     );
   }
+}
+
+export function BeziersToPath(
+  beziers: CubicBezier[]
+): string {
+  if (beziers.length == 1) {
+    return beziers[0].toString();
+  }
+  if (beziers.length == 2) {
+    const P = beziers[0];
+    const Q = beziers[1];
+    if (P instanceof CubicBezier) {
+      if (Q instanceof CubicBezier) {
+        return (
+          P.toString() +
+          "S " +
+          Q.b2.x +
+          "," +
+          Q.b2.y +
+          " " +
+          Q.b3.x +
+          "," +
+          Q.b3.y
+        );
+      }
+    }
+  }
+  var result = ``;
+  for (let index = 0; index < beziers.length - 1; index++) {
+    const P = beziers[index];
+    const Q = beziers[index + 1];
+    if (P instanceof CubicBezier) {
+      if (Q instanceof CubicBezier) {
+        result +=
+          P.toString() +
+          "S " +
+          Q.b2.x +
+          "," +
+          Q.b2.y +
+          " " +
+          Q.b3.x +
+          "," +
+          Q.b3.y;
+      }
+    }
+  }
+  return result;
 }

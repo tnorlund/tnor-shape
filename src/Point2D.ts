@@ -72,6 +72,15 @@ export class Point2D {
   }
 
   /**
+   * 
+   * @param that 
+   * @returns 
+   */
+  equals(that: Point2D): boolean {
+    return this.x === that.x && this.y === that.y;
+  }
+
+  /**
    *
    * @returns {string} The string representation of the point
    */

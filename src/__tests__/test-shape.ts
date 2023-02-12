@@ -1,6 +1,12 @@
 import { describe, expect, test } from "@jest/globals";
 import { Point2D } from "../Point2D";
-import { BoundingBox, CubicBezier, Ellipse, QuadraticBezier } from "../Shape";
+import {
+  BeziersToPath,
+  BoundingBox,
+  CubicBezier,
+  Ellipse,
+  QuadraticBezier,
+} from "../Shape";
 
 describe("testing CubicBezier", () => {
   test("Cubic Bezier curves are in b0, b1, b2, b3 order", () => {
@@ -129,7 +135,40 @@ describe("testing Ellipse", () => {
         new Point2D(28.954304, 60),
         new Point2D(20, 55.522847999999996),
         new Point2D(20, 50)
-      )
+      ),
     ]);
+  });
+});
+
+describe("Beziers can be written as a single path", () => {
+  test("A single Cubic Bezier can be written as a path", () => {
+    const P = new CubicBezier(
+      new Point2D(20, 50),
+      new Point2D(20, 44.477152000000004),
+      new Point2D(28.954304, 40),
+      new Point2D(40, 40)
+    );
+    expect(BeziersToPath([P])).toEqual(
+      `M20,50 C20,44.477152000000004 28.954304,40 40,40`
+    );
+  });
+
+  test("Two Cubic Bezier Curves can be written as a path", () => {
+    const P = new CubicBezier(
+      new Point2D(20, 50),
+      new Point2D(20, 44.477152000000004),
+      new Point2D(28.954304, 40),
+      new Point2D(40, 40)
+    );
+    const Q = new CubicBezier(
+      new Point2D(40, 40),
+      new Point2D(51.045696, 40),
+      new Point2D(60, 44.477152000000004),
+      new Point2D(60, 50)
+    );
+
+    expect(BeziersToPath([P, Q])).toEqual(
+      `M20,50 C20,44.477152000000004 28.954304,40 40,40S 60,44.477152000000004 60,50`
+    );
   });
 });
