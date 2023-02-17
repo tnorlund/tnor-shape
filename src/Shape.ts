@@ -3,7 +3,7 @@ import { Polynomial } from "./Polynomial";
 
 interface Intersection {
   point: Point2D;
-  t: number | null;
+  t: number;
 }
 
 export class BoundingBox {
@@ -68,6 +68,27 @@ export function pathToCubicBezier(path: string): CubicBezier | void {
     const b3 = new Point2D(b0.x + Number(result[7]), b0.y + Number(result[8]));
     return new CubicBezier(b0, b1, b2, b3);
   }
+}
+
+export class Line {
+  start: Point2D;
+  end: Point2D;
+  public constructor(start: Point2D, end: Point2D) {
+    this.start = start;
+    this.end = end
+  }
+
+  getBoundingBox() {
+    const min = this.start.min(this.end);
+    const max = this.start.max(this.end);
+
+    return new BoundingBox(
+        min.x,
+        min.y,
+        max.x - min.x,
+        max.y - min.y
+    );
+}
 }
 
 export class CubicBezier {
@@ -138,7 +159,7 @@ export class CubicBezier {
         point: c3
           .multiply(t * t * t)
           .add(c2.multiply(t * t).add(c1.multiply(t).add(c0))),
-        t: null,
+        t: 0,
       });
     }
 
@@ -653,9 +674,8 @@ export class QuadraticBezier {
     const c1 = a.add(b);
 
     const c0 = new Point2D(this.b0.x, this.b0.y);
-
-    const rx_squared = that.rx * that.rx;
-    const ry_squared = that.ry * that.ry;
+    const rx_squared = that.rx/2 * that.rx/2;
+    const ry_squared = that.ry/2 * that.ry/2;
     const roots = new Polynomial(
       ry_squared * c2.x * c2.x + rx_squared * c2.y * c2.y,
       2 * (ry_squared * c2.x * c1.x + rx_squared * c2.y * c1.y),
@@ -800,7 +820,7 @@ export class Ellipse {
           if (Math.abs(tst) < norm1) {
             result.push({
               point: new Point2D(roots_x[x], roots_y[y]),
-              t: null,
+              t: 0,
             });
           }
         }
@@ -825,8 +845,8 @@ export class Ellipse {
 
     const c0 = new Point2D(that.b0.x, that.b0.y);
 
-    const rx_squared = this.rx * this.rx;
-    const ry_squared = this.ry * this.ry;
+    const rx_squared = this.rx/2 * this.rx/2;
+    const ry_squared = this.ry/2 * this.ry/2;
     const roots = new Polynomial(
       ry_squared * c2.x * c2.x + rx_squared * c2.y * c2.y,
       2 * (ry_squared * c2.x * c1.x + rx_squared * c2.y * c1.y),
@@ -850,7 +870,7 @@ export class Ellipse {
       if (0 <= t && t <= 1) {
         result.push({
           point: c2.multiply(t * t).add(c1.multiply(t).add(c0)),
-          t: null,
+          t: 0,
         });
       }
     }
@@ -915,7 +935,7 @@ export class Ellipse {
         point: c3
           .multiply(t * t * t)
           .add(c2.multiply(t * t).add(c1.multiply(t).add(c0))),
-        t: null,
+        t: 0,
       });
     }
 
