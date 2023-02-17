@@ -3,6 +3,8 @@
         "Beziers",
         "bezout",
         "lerp",
-        "lerps"
+        "lerps",
+        "perp",
+        "startpoint"
     ]
 }
