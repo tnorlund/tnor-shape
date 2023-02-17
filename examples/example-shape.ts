@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import { Canvas } from "../src/Canvas";
 
 import { Matrix2D } from "../src/Matrix2D";
 import { Point2D } from "../src/Point2D";
@@ -19,46 +20,19 @@ function randomIntFromInterval(min: number, max: number): number {
 }
 
 const DEBUG = false;
-
-const width = 430;
-const height = 275;
+const canvas = new Canvas(275, 430);
 const number_circles = 10;
-
-const padding = 30;
-
-function onPaper(shape: QuadraticBezier | Ellipse): boolean {
-  return (
-    new Line(new Point2D(0, padding), new Point2D(width, padding))
-      .getBoundingBox()
-      .overlaps(shape.getBoundingBox()) ||
-    new Line(
-      new Point2D(width - padding, 0),
-      new Point2D(width - padding, height)
-    )
-      .getBoundingBox()
-      .overlaps(shape.getBoundingBox()) ||
-    new Line(
-      new Point2D(0, height - padding),
-      new Point2D(width, height - padding)
-    )
-      .getBoundingBox()
-      .overlaps(shape.getBoundingBox()) ||
-    new Line(new Point2D(0, padding), new Point2D(0, height - padding))
-      .getBoundingBox()
-      .overlaps(shape.getBoundingBox())
-  );
-}
 
 function randomizeEllipses(number_circles: number): Ellipse[] {
   const result: Ellipse[] = [];
   for (let index = 0; index < number_circles; index++) {
     const this_ellipse = new Ellipse(
       new Point2D(
-        randomIntFromInterval(0 + padding, width - padding),
-        randomIntFromInterval(0 + padding, height - padding)
+        randomIntFromInterval(0, canvas.width),
+        randomIntFromInterval(0, canvas.height)
       ),
-      randomIntFromInterval(padding, padding + 20),
-      randomIntFromInterval(padding, padding + 20)
+      randomIntFromInterval(3, 20),
+      randomIntFromInterval(3, 20)
     );
     var overlapping = false;
     for (let index = 0; index < result.length; index++) {
@@ -69,7 +43,9 @@ function randomizeEllipses(number_circles: number): Ellipse[] {
         overlapping = true;
       }
     }
-    if (!overlapping && onPaper(this_ellipse)) {
+    if (!overlapping && canvas.onCanvas(this_ellipse)
+      // onPaper(this_ellipse)
+      ) {
       result.push(this_ellipse);
     }
   }
@@ -203,7 +179,10 @@ function createEdgeCurves(node_edges: NodeEdges[]): edgeCurves[] {
         ) {
           continue;
         }
-        if (!onPaper(curve)) {
+        if (
+          !canvas.onCanvas(curve)
+          // !onPaper(curve)
+        ) {
           continue;
         }
         if (
@@ -235,7 +214,7 @@ ellipses.forEach((ellipse) => {
     ellipse.center.y
   }" rx="${ellipse.rx / 2}" ry="${
     ellipse.ry / 2
-  }" style="fill: none; stroke: black; stroke-linejoin: round; stroke-width: 4px;"/>`;
+  }" style="fill: none; stroke: black; stroke-linejoin: round; stroke-width: 2px;"/>`;
 });
 edge_curves.forEach((edge_curve) => {
   edge_curve.curves.forEach((curve) => {
@@ -246,11 +225,7 @@ if (!DEBUG) {
   fs.writeFileSync(
     file_name,
     `<?xml version="1.0" encoding="UTF-8" standalone="no"?>` +
-      `<svg id="Layer_2" data-name="Layer 2" width="${width}mm" height="${height}mm" viewBox="0 0 ${width} ${height}" version="1.1" sodipodi:docname="example.svg" inkscape:version="1.2.2 (b0a84865, 2022-12-01)" ` +
-      `xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" ` +
-      `xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" ` +
-      `xmlns="http://www.w3.org/2000/svg" ` +
-      `xmlns:svg="http://www.w3.org/2000/svg">` +
+    canvas.toSVGTag() + 
       svg_output + 
       `</svg>`,
     "utf-8"
