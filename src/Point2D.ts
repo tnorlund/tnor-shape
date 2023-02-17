@@ -1,3 +1,5 @@
+import { Matrix2D } from "./Matrix2D";
+
 export class Point2D {
   x: number;
   y: number;
@@ -43,6 +45,8 @@ export class Point2D {
    * @returns
    */
   public lerp(that: Point2D, t: number) {
+    if (t == 0) return this
+    if (t == 1) return that
     if (t < 0 || t > 1) {
       throw new RangeError("t must be between 0 and 1");
     }
@@ -79,6 +83,13 @@ export class Point2D {
   equals(that: Point2D): boolean {
     return this.x === that.x && this.y === that.y;
   }
+
+  transform(matrix: Matrix2D) {
+    return new Point2D(
+        matrix.a * this.x + matrix.c * this.y + matrix.e,
+        matrix.b * this.x + matrix.d * this.y + matrix.f
+    );
+}
 
   /**
    *
