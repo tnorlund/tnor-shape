@@ -1,3 +1,5 @@
+import * as fs from "fs";
+
 import { Matrix2D } from "../src/Matrix2D";
 import { Point2D } from "../src/Point2D";
 import {
@@ -7,6 +9,7 @@ import {
   Ellipse,
   Line,
   QuadraticBezier,
+  BoundingBox,
 } from "../src/Shape";
 import { Vector2D } from "../src/Vector2D";
 
@@ -17,12 +20,34 @@ function randomIntFromInterval(min: number, max: number): number {
 
 const DEBUG = false;
 
-const width = 3000;
-const height = 2000;
+const width = 430;
+const height = 275;
+const number_circles = 10;
 
-const padding = 100;
+const padding = 30;
 
-const mid_line_length = 1.5;
+function onPaper(shape: QuadraticBezier | Ellipse): boolean {
+  return (
+    new Line(new Point2D(0, padding), new Point2D(width, padding))
+      .getBoundingBox()
+      .overlaps(shape.getBoundingBox()) ||
+    new Line(
+      new Point2D(width - padding, 0),
+      new Point2D(width - padding, height)
+    )
+      .getBoundingBox()
+      .overlaps(shape.getBoundingBox()) ||
+    new Line(
+      new Point2D(0, height - padding),
+      new Point2D(width, height - padding)
+    )
+      .getBoundingBox()
+      .overlaps(shape.getBoundingBox()) ||
+    new Line(new Point2D(0, padding), new Point2D(0, height - padding))
+      .getBoundingBox()
+      .overlaps(shape.getBoundingBox())
+  );
+}
 
 function randomizeEllipses(number_circles: number): Ellipse[] {
   const result: Ellipse[] = [];
@@ -32,8 +57,8 @@ function randomizeEllipses(number_circles: number): Ellipse[] {
         randomIntFromInterval(0 + padding, width - padding),
         randomIntFromInterval(0 + padding, height - padding)
       ),
-      randomIntFromInterval(20, 70),
-      randomIntFromInterval(20, 70)
+      randomIntFromInterval(padding, padding + 20),
+      randomIntFromInterval(padding, padding + 20)
     );
     var overlapping = false;
     for (let index = 0; index < result.length; index++) {
@@ -44,20 +69,21 @@ function randomizeEllipses(number_circles: number): Ellipse[] {
         overlapping = true;
       }
     }
-    if (!overlapping) {
+    if (!overlapping && onPaper(this_ellipse)) {
       result.push(this_ellipse);
     }
   }
   return result;
 }
 
-const ellipses = randomizeEllipses(15);
+const ellipses = randomizeEllipses(number_circles);
 
-const circle_A = new Ellipse(new Point2D(90, 130), 35, 30);
+function targetInEllipse(ellipses: Ellipse[]): Ellipse[] {
+  const result: Ellipse[] = [];
+  const number_ellipses = randomIntFromInterval(3, 10);
 
-const circle_B = new Ellipse(new Point2D(250, 70), 40, 20);
-
-const circle_C = new Ellipse(new Point2D(60, 40), 60, 30);
+  return result;
+}
 
 interface NodeEdges {
   ellipse_A: Ellipse;
@@ -128,13 +154,15 @@ function createEdgeCurves(node_edges: NodeEdges[]): edgeCurves[] {
     const line = node_edges[index].line;
     const mid_point = line.start.lerp(line.end, 0.5);
     const matrix = new Matrix2D();
-    const lerp_length = randomIntFromInterval(1, 5) / 10;
+    const lerp_length = randomIntFromInterval(3, 9) / 9;
+    const angle_adjustment =
+      (randomIntFromInterval(50, 100) / 100) * (Math.PI / 2);
     const tangent_endpoint = mid_point
       .lerp(line.end, lerp_length)
-      .transform(matrix.rotationAt(Math.PI / 2, mid_point));
+      .transform(matrix.rotationAt(angle_adjustment, mid_point));
     const tangent_startpoint = mid_point
       .lerp(line.end, lerp_length)
-      .transform(matrix.rotationAt(-Math.PI / 2, mid_point));
+      .transform(matrix.rotationAt(-angle_adjustment, mid_point));
     const number_anchors = 2 * randomIntFromInterval(5, 10);
     const anchors = [];
     for (let index = 0; index < number_anchors; index++) {
@@ -175,6 +203,9 @@ function createEdgeCurves(node_edges: NodeEdges[]): edgeCurves[] {
         ) {
           continue;
         }
+        if (!onPaper(curve)) {
+          continue;
+        }
         if (
           curve.getBoundingBox().overlaps(outer_ellipse_A.getBoundingBox()) ||
           curve.getBoundingBox().overlaps(outer_ellipse_B.getBoundingBox())
@@ -197,58 +228,31 @@ function createEdgeCurves(node_edges: NodeEdges[]): edgeCurves[] {
 }
 
 const edge_curves = createEdgeCurves(node_edges);
-
+const file_name = `examples/output/${new Date().toISOString()}.svg`;
+let svg_output = ``;
+ellipses.forEach((ellipse) => {
+  svg_output += `<ellipse cx="${ellipse.center.x}" cy="${
+    ellipse.center.y
+  }" rx="${ellipse.rx / 2}" ry="${
+    ellipse.ry / 2
+  }" style="fill: none; stroke: black; stroke-linejoin: round; stroke-width: 4px;"/>`;
+});
+edge_curves.forEach((edge_curve) => {
+  edge_curve.curves.forEach((curve) => {
+    svg_output += `<path d="${curve.toString()}" style="fill: none; stroke: black; stroke-linejoin: round; stroke-width: 1px;"/>`
+  });
+});
 if (!DEBUG) {
-  console.log(`<svg id="Layer_2" data-name="Layer 2"`);
-  console.log(
-    `xmlns="http://www.w3.org/2000/svg" width="${width}mm" height="${height}mm" viewBox="0 0 ${width} ${height}">`
+  fs.writeFileSync(
+    file_name,
+    `<?xml version="1.0" encoding="UTF-8" standalone="no"?>` +
+      `<svg id="Layer_2" data-name="Layer 2" width="${width}mm" height="${height}mm" viewBox="0 0 ${width} ${height}" version="1.1" sodipodi:docname="example.svg" inkscape:version="1.2.2 (b0a84865, 2022-12-01)" ` +
+      `xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" ` +
+      `xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" ` +
+      `xmlns="http://www.w3.org/2000/svg" ` +
+      `xmlns:svg="http://www.w3.org/2000/svg">` +
+      svg_output + 
+      `</svg>`,
+    "utf-8"
   );
-  ellipses.forEach((ellipse) => {
-    console.log(
-      `<ellipse cx="${ellipse.center.x}" cy="${ellipse.center.y}" rx="${
-        ellipse.rx / 2
-      }" ry="${
-        ellipse.ry / 2
-      }" style="fill: none; stroke: black; stroke-linejoin: round; stroke-width: 4px;"/>`
-    );
-  });
-
-  node_edges.forEach((node) => {
-    console.log(
-      `<line x1="${node.line.start.x}" y1="${node.line.start.y}" x2="${node.line.end.x}" y2="${node.line.end.y}" style="fill: none; stroke: black; stroke-linejoin: round; stroke-width: 1px;" />`
-    );
-  });
-
-  edge_curves.forEach((edge_curve) => {
-    console.log(
-      `<line x1="${edge_curve.tangent.start.x}" y1="${edge_curve.tangent.start.y}" x2="${edge_curve.tangent.end.x}" y2="${edge_curve.tangent.end.y}" style="fill: none; stroke: red; stroke-linejoin: round; stroke-width: 1px;" />`
-    );
-    edge_curve.anchors.forEach((anchor) => {
-      console.log(
-        `<circle cx="${anchor.x}" cy="${anchor.y}" r="2" style="fill: red;"/>`
-      );
-    });
-    edge_curve.curves.forEach((curve) => {
-      console.log(
-        `<path d="${curve.toString()}" style="fill: none; stroke: black; stroke-linejoin: round; stroke-width: 1px;"/>`
-      );
-    });
-  });
-
-  // AB_clean_curves.forEach((curve) => {
-  //   console.log(
-  //     `<path d="${curve.toString()}" style="fill: none; stroke: #231f20; stroke-linejoin: round; stroke-width: 1px;"/>`
-  //   );
-  // });
-  // AC_clean_curves.forEach((curve) => {
-  //   console.log(
-  //     `<path d="${curve.toString()}" style="fill: none; stroke: #231f20; stroke-linejoin: round; stroke-width: 1px;"/>`
-  //   );
-  // });
-  // BC_clean_curves.forEach((curve) => {
-  //   console.log(
-  //     `<path d="${curve.toString()}" style="fill: none; stroke: #231f20; stroke-linejoin: round; stroke-width: 1px;"/>`
-  //   );
-  // });
-  console.log(`</svg>`);
 }
