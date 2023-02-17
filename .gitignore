@@ -104,7 +104,7 @@ dist
 .tern-port
 
 # example output
-.examples/output
+examples/output*
 
 # Mac stuff
 *.DS_Store
