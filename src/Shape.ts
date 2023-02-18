@@ -75,20 +75,63 @@ export class Line {
   end: Point2D;
   public constructor(start: Point2D, end: Point2D) {
     this.start = start;
-    this.end = end
+    this.end = end;
   }
 
   getBoundingBox() {
     const min = this.start.min(this.end);
     const max = this.start.max(this.end);
 
-    return new BoundingBox(
-        min.x,
-        min.y,
-        max.x - min.x,
-        max.y - min.y
-    );
-}
+    return new BoundingBox(min.x, min.y, max.x - min.x, max.y - min.y);
+  }
+
+  public intersectLine(that: Line): Intersection[] {
+    const result: Intersection[] = [];
+
+    const a1 = this.start;
+    const a2 = this.end;
+    const b1 = that.start;
+    const b2 = that.end;
+
+    const ua_t = (b2.x - b1.x) * (a1.y - b1.y) - (b2.y - b1.y) * (a1.x - b1.x);
+    const ub_t = (a2.x - a1.x) * (a1.y - b1.y) - (a2.y - a1.y) * (a1.x - b1.x);
+    const u_b = (b2.y - b1.y) * (a2.x - a1.x) - (b2.x - b1.x) * (a2.y - a1.y);
+
+    if (u_b !== 0) {
+      const ua = ua_t / u_b;
+      const ub = ub_t / u_b;
+
+      if (0 <= ua && ua <= 1 && 0 <= ub && ub <= 1) {
+        result.push({
+          point: new Point2D(
+            a1.x + ua * (a2.x - a1.x),
+            a1.y + ua * (a2.y - a1.y)
+          ),
+          t: 0,
+        });
+      }
+    }
+    return result;
+  }
+
+  public intersectRectangle(that: Rectangle): Intersection[] {
+    const a1 = this.start;
+    const a2 = this.end;
+    const r1 = new Point2D(that.x, that.y);
+    const r2 = new Point2D(that.x + that.width, that.y + that.height);
+    const min = r1.min(r2);
+    const max = r1.max(r2);
+    const topRight = new Point2D(max.x, min.y);
+    const bottomLeft = new Point2D(min.x, max.y);
+    const result: Intersection[] = [];
+
+    result.push(...new Line(min, topRight).intersectLine(new Line(a1, a2)));
+    result.push(...new Line(topRight, max).intersectLine(new Line(a1, a2)));
+    result.push(...new Line(max, bottomLeft).intersectLine(new Line(a1, a2)));
+    result.push(...new Line(bottomLeft, min).intersectLine(new Line(a1, a2)));
+
+    return result;
+  }
 }
 
 export class CubicBezier {
@@ -674,8 +717,8 @@ export class QuadraticBezier {
     const c1 = a.add(b);
 
     const c0 = new Point2D(this.b0.x, this.b0.y);
-    const rx_squared = that.rx/2 * that.rx/2;
-    const ry_squared = that.ry/2 * that.ry/2;
+    const rx_squared = ((that.rx / 2) * that.rx) / 2;
+    const ry_squared = ((that.ry / 2) * that.ry) / 2;
     const roots = new Polynomial(
       ry_squared * c2.x * c2.x + rx_squared * c2.y * c2.y,
       2 * (ry_squared * c2.x * c1.x + rx_squared * c2.y * c1.y),
@@ -845,8 +888,8 @@ export class Ellipse {
 
     const c0 = new Point2D(that.b0.x, that.b0.y);
 
-    const rx_squared = this.rx/2 * this.rx/2;
-    const ry_squared = this.ry/2 * this.ry/2;
+    const rx_squared = ((this.rx / 2) * this.rx) / 2;
+    const ry_squared = ((this.ry / 2) * this.ry) / 2;
     const roots = new Polynomial(
       ry_squared * c2.x * c2.x + rx_squared * c2.y * c2.y,
       2 * (ry_squared * c2.x * c1.x + rx_squared * c2.y * c1.y),
@@ -976,6 +1019,23 @@ export class Ellipse {
         new Point2D(this.center.x - this.rx, this.center.y)
       ),
     ];
+  }
+}
+
+export class Rectangle {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  constructor(x: number, y: number, width: number, height: number) {
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+  }
+
+  getBoundingBox(): BoundingBox {
+    return new BoundingBox(this.x, this.y, this.width, this.height);
   }
 }
 
