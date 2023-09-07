@@ -1,4 +1,4 @@
-import { Arc, CubicBezier, Ellipse, Line, QuadraticBezier } from "./Shape";
+import { Arc, CubicBezier, Ellipse, Line, QuadraticBezier, Rectangle } from "./Shape";
 
 export class Canvas {
   width: number;
@@ -10,7 +10,7 @@ export class Canvas {
   }
 
   public onCanvas(
-    shape: Line | CubicBezier | QuadraticBezier | Ellipse
+    shape: Line | CubicBezier | QuadraticBezier | Ellipse | Rectangle
   ): boolean {
     const shape_bbox = shape.getBoundingBox();
     return (

@@ -1,3 +1,5 @@
+import { Point2D } from "./Point2D";
+
 export class Vector2D {
   x: number;
   y: number;
@@ -20,6 +22,14 @@ export class Vector2D {
 
   divide(scalar: number): Vector2D {
     return new Vector2D(this.x / scalar, this.y / scalar);
+  }
+
+  fromPoints(p1: Point2D, p2: Point2D): Vector2D {
+    return new Vector2D(p2.x - p1.x, p2.y - p1.y);
+  }
+
+  length() {
+    return Math.sqrt(this.x * this.x + this.y * this.y);
   }
 
   dot(that: Vector2D): number {

@@ -1,5 +1,6 @@
 import { Point2D } from "./Point2D";
 import { Polynomial } from "./Polynomial";
+import { Vector2D } from "./Vector2D";
 
 interface Intersection {
   point: Point2D;
@@ -18,7 +19,7 @@ export class BoundingBox {
     this.height = height;
   }
 
-  overlaps(that: BoundingBox): boolean {
+  overlaps(that: BoundingBox, tolerance:number = 0): boolean {
     return (
       this.x < that.x + that.width &&
       this.x + this.width > that.x &&
@@ -980,6 +981,68 @@ export class Ellipse {
           .add(c2.multiply(t * t).add(c1.multiply(t).add(c0))),
         t: 0,
       });
+    }
+
+    return result;
+  }
+
+  public intersectLine(that: Line): Intersection[] {
+    // c: this.center, 
+    // rx: this.rx, 
+    // ry: this.ry, 
+    // a1: that.start, 
+    // a2: that.end
+    const result: Intersection[] = []
+    const c = this.center;
+    const rx = this.rx / 2;
+    const ry = this.ry / 2;
+    const a1 = that.start;
+    const a2 = that.end;
+    const origin = new Vector2D(a1.x, a1.y);
+    const dir = new Vector2D().fromPoints(a1, a2)
+    const center = new Vector2D(c.x, c.y);
+    const diff = origin.subtract(center);
+    const mDir = new Vector2D(dir.x / (rx * rx), dir.y / (ry * ry));
+    const mDiff = new Vector2D(diff.x / (rx * rx), diff.y / (ry * ry));
+
+    const a = dir.dot(mDir);
+    const b = dir.dot(mDiff);
+    const d = b * b - a * (diff.dot(mDiff) - 1.0)
+
+    if (d < 0) {
+      // result = new Intersection("Outside");
+    } else if (d > 0) {
+      const root = Math.sqrt(d); // eslint-disable-line no-shadow
+      const t_a = (-b - root) / a;
+      const t_b = (-b + root) / a;
+
+      if ((t_a < 0 || 1 < t_a) && (t_b < 0 || 1 < t_b)) {
+        if ((t_a < 0 && t_b < 0) || (t_a > 1 && t_b > 1)) {
+          // result = new Intersection("Outside");
+        } else {
+          // result = new Intersection("Inside");
+        }
+      } else {
+        // result = new Intersection("Intersection");
+        if (0 <= t_a && t_a <= 1) {
+          result.push( {point: a1.lerp(a2, t_a), t:0})
+          // result.appendPoint(a1.lerp(a2, t_a));
+        }
+        if (0 <= t_b && t_b <= 1) {
+          result.push({point:a1.lerp(a2, t_b), t:0})
+          // result.appendPoint(a1.lerp(a2, t_b));
+        }
+      }
+    } else {
+      const t = -b / a;
+
+      if (0 <= t && t <= 1) {
+        // result = new Intersection("Intersection");
+        // result.appendPoint(a1.lerp(a2, t));
+        result.push({point: a1.lerp(a2, t), t:0})
+      } else {
+        // result = new Intersection("Outside");
+      }
     }
 
     return result;
