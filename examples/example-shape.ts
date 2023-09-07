@@ -3,16 +3,7 @@ import { Canvas } from "../src/Canvas";
 
 import { Matrix2D } from "../src/Matrix2D";
 import { Point2D } from "../src/Point2D";
-import {
-  CubicBezier,
-  pathToQuadraticBezier,
-  pathToCubicBezier,
-  Ellipse,
-  Line,
-  QuadraticBezier,
-  BoundingBox,
-} from "../src/Shape";
-import { Vector2D } from "../src/Vector2D";
+import { Ellipse, Line, QuadraticBezier } from "../src/Shape";
 
 function randomIntFromInterval(min: number, max: number): number {
   // min and max included
@@ -43,9 +34,7 @@ function randomizeEllipses(number_circles: number): Ellipse[] {
         overlapping = true;
       }
     }
-    if (!overlapping && canvas.onCanvas(this_ellipse)
-      // onPaper(this_ellipse)
-      ) {
+    if (!overlapping && canvas.onCanvas(this_ellipse)) {
       result.push(this_ellipse);
     }
   }
@@ -218,15 +207,15 @@ ellipses.forEach((ellipse) => {
 });
 edge_curves.forEach((edge_curve) => {
   edge_curve.curves.forEach((curve) => {
-    svg_output += `<path d="${curve.toString()}" style="fill: none; stroke: black; stroke-linejoin: round; stroke-width: 1px;"/>`
+    svg_output += `<path d="${curve.toString()}" style="fill: none; stroke: black; stroke-linejoin: round; stroke-width: 1px;"/>`;
   });
 });
 if (!DEBUG) {
   fs.writeFileSync(
     file_name,
     `<?xml version="1.0" encoding="UTF-8" standalone="no"?>` +
-    canvas.toSVGTag() + 
-      svg_output + 
+      canvas.toSVGTag() +
+      svg_output +
       `</svg>`,
     "utf-8"
   );

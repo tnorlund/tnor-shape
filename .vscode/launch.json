@@ -63,6 +63,36 @@
       ],
       "console": "integratedTerminal",
       "outFiles": ["${workspaceFolder}/**/*.js"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "example-sun",
+      "skipFiles": ["<node_internals>/**"],
+      "program": "${workspaceFolder}/examples/example-sun.ts",
+      "runtimeArgs": [
+        "-r",
+        "ts-node/register",
+        "-r",
+        "tsconfig-paths/register"
+      ],
+      "console": "integratedTerminal",
+      "outFiles": ["${workspaceFolder}/**/*.js"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "example-sun2",
+      "skipFiles": ["<node_internals>/**"],
+      "program": "${workspaceFolder}/examples/example-sun_2.ts",
+      "runtimeArgs": [
+        "-r",
+        "ts-node/register",
+        "-r",
+        "tsconfig-paths/register"
+      ],
+      "console": "integratedTerminal",
+      "outFiles": ["${workspaceFolder}/**/*.js"]
     }
   ]
 }
